@@ -506,7 +506,7 @@ export default function MarkupsMonthPage() {
                   onClick={() => setEditingCapital(true)}
                   className="text-2xl font-bold text-slate-100 hover:text-slate-200 transition"
                 >
-                  {(filteredCapitalEvolution.length > 0 ? filteredCapitalEvolution[filteredCapitalEvolution.length - 1].capital : startingCapital).toLocaleString()}€
+                  {(filteredCapitalEvolution.length > 0 ? filteredCapitalEvolution[filteredCapitalEvolution.length - 1].capital : startingCapital).toLocaleString('fr-FR')}€
                 </button>
               )}
               {filteredCapitalEvolution.length > 0 && (
@@ -610,7 +610,7 @@ export default function MarkupsMonthPage() {
                       labelFormatter={(value) => `Jour ${value}`}
                       formatter={(value, name, item) => (
                         <span className="text-slate-100">
-                          {Number(value).toLocaleString()}€ ({item.payload.pct > 0 ? "+" : ""}{item.payload.pct}%)
+                          {Number(value).toLocaleString('fr-FR')}€ ({item.payload.pct > 0 ? "+" : ""}{item.payload.pct}%)
                         </span>
                       )}
                     />

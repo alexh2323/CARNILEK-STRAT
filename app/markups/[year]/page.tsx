@@ -360,7 +360,7 @@ export default function MarkupsYearPage() {
                   onClick={() => setEditingCapital(true)}
                   className="text-2xl font-bold text-slate-100 hover:text-slate-200 transition"
                 >
-                  {(capitalEvolution.length > 0 ? capitalEvolution[capitalEvolution.length - 1].capital : startingCapital).toLocaleString()}€
+                  {(capitalEvolution.length > 0 ? capitalEvolution[capitalEvolution.length - 1].capital : startingCapital).toLocaleString('fr-FR')}€
                 </button>
               )}
               {capitalEvolution.length > 0 && (
@@ -464,7 +464,7 @@ export default function MarkupsYearPage() {
                       labelFormatter={(value) => `${value}`}
                       formatter={(value, name, item) => (
                         <span className="text-slate-100">
-                          {Number(value).toLocaleString()}€ ({item.payload.pct > 0 ? "+" : ""}{item.payload.pct}%)
+                          {Number(value).toLocaleString('fr-FR')}€ ({item.payload.pct > 0 ? "+" : ""}{item.payload.pct}%)
                         </span>
                       )}
                     />
