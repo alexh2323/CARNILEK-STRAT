@@ -439,7 +439,7 @@ export default function MarkupsMonthPage() {
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-100">GAINS (%)</h2>
               </div>
-              <LabeledBars data={weekGainsPct} barWidth={38} height={96} />
+              <LabeledBars data={weeklyStats} barWidth={38} height={96} />
             </section>
           </aside>
         </div>
