@@ -313,12 +313,13 @@ export default function MarkupsMonthPage() {
               <span className="rounded-lg bg-emerald-900/60 px-3 py-1.5 text-sm font-semibold text-emerald-200">
                 TP3: {resultStats.TP3} <span className="text-emerald-300/70">({resultStats.total > 0 ? Math.round((resultStats.TP3 / resultStats.total) * 100) : 0}%)</span>
               </span>
-              <span className="rounded-lg bg-red-900/60 px-3 py-1.5 text-sm font-semibold text-red-200">
-                Full SL: {resultStats.SL} <span className="text-red-300/70">({resultStats.total > 0 ? Math.round((resultStats.SL / resultStats.total) * 100) : 0}%)</span>
-              </span>
               <span className="rounded-lg bg-yellow-900/40 px-3 py-1.5 text-sm font-semibold text-yellow-300">
                 BE: {resultStats.BE} <span className="text-yellow-400/70">({resultStats.total > 0 ? Math.round((resultStats.BE / resultStats.total) * 100) : 0}%)</span>
                 <span className="ml-2 text-[10px] text-yellow-400/60">[TP1: {resultStats.beByPartial.TP1} • TP2: {resultStats.beByPartial.TP2}]</span>
+              </span>
+              <span className="rounded-lg bg-red-900/40 px-3 py-1.5 text-sm font-semibold text-red-300">
+                SL: {resultStats.SL} <span className="text-red-400/70">({resultStats.total > 0 ? Math.round((resultStats.SL / resultStats.total) * 100) : 0}%)</span>
+                <span className="ml-2 text-[10px] text-red-400/60">[Full: {resultStats.SL} • TP1: {resultStats.slByPartial.TP1} • TP2: {resultStats.slByPartial.TP2}]</span>
               </span>
             </div>
             <div className="ml-auto flex items-center gap-3 text-sm">
