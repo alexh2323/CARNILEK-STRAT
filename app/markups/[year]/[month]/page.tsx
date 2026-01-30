@@ -313,6 +313,113 @@ export default function MarkupsMonthPage() {
           >
             Tout le mois
           </button>
+          
+          {/* Bouton pour générer des données de test */}
+          {monthEntries.length === 0 && (
+            <button
+              onClick={async () => {
+                const results: TradeResult[] = ["TP1", "TP2", "TP3", "SL", "BE"]
+                const sampleTrades: Array<{
+                  day: number;
+                  hour: number;
+                  pct: number;
+                  result: TradeResult;
+                  pipsTP1?: number;
+                  pipsTP2?: number;
+                  pipsTP3?: number;
+                  pipsSL?: number;
+                  resultTP1?: PartialResult;
+                  resultTP2?: PartialResult;
+                  resultTP3?: PartialResult;
+                }> = []
+                
+                // Générer 20-30 trades aléatoires répartis sur le mois
+                const numTrades = 20 + Math.floor(Math.random() * 10)
+                const daysInMonth = new Date(year, month, 0).getDate()
+                
+                for (let i = 0; i < numTrades; i++) {
+                  const day = 1 + Math.floor(Math.random() * daysInMonth)
+                  const hour = 8 + Math.floor(Math.random() * 10) // 8h-18h
+                  const resultIdx = Math.random()
+                  let result: TradeResult
+                  let pct: number
+                  
+                  // 60% TP, 25% SL, 15% BE
+                  if (resultIdx < 0.35) {
+                    result = "TP1"
+                    pct = 0.8 + Math.random() * 1.5
+                  } else if (resultIdx < 0.55) {
+                    result = "TP2"
+                    pct = 1.5 + Math.random() * 2
+                  } else if (resultIdx < 0.60) {
+                    result = "TP3"
+                    pct = 2.5 + Math.random() * 2.5
+                  } else if (resultIdx < 0.85) {
+                    result = "SL"
+                    pct = -(0.8 + Math.random() * 1.2)
+                  } else {
+                    result = "BE"
+                    pct = -0.1 + Math.random() * 0.2
+                  }
+                  
+                  const trade: typeof sampleTrades[0] = {
+                    day,
+                    hour,
+                    pct: Math.round(pct * 10) / 10,
+                    result,
+                  }
+                  
+                  // Ajouter les pips selon le résultat
+                  if (result === "TP1" || result === "TP2" || result === "TP3" || result === "BE") {
+                    trade.pipsTP1 = 20 + Math.floor(Math.random() * 40)
+                    trade.resultTP1 = "TP"
+                  }
+                  if (result === "TP2" || result === "TP3") {
+                    trade.pipsTP2 = 15 + Math.floor(Math.random() * 35)
+                    trade.resultTP2 = "TP"
+                  }
+                  if (result === "TP3") {
+                    trade.pipsTP3 = 10 + Math.floor(Math.random() * 30)
+                    trade.resultTP3 = "TP"
+                  }
+                  if (result === "BE") {
+                    trade.resultTP2 = "BE"
+                  }
+                  if (result === "SL") {
+                    trade.pipsSL = 15 + Math.floor(Math.random() * 25)
+                  }
+                  
+                  sampleTrades.push(trade)
+                }
+                
+                // Trier par jour et heure
+                sampleTrades.sort((a, b) => a.day - b.day || a.hour - b.hour)
+                
+                for (const trade of sampleTrades) {
+                  const entry: MarkupEntry = {
+                    id: crypto.randomUUID(),
+                    datetimeLocal: `${year}-${pad2(month)}-${pad2(trade.day)}T${pad2(trade.hour)}:${pad2(Math.floor(Math.random() * 60))}`,
+                    symbol: "MSU",
+                    timeframe: ["5m", "15m", "1h"][Math.floor(Math.random() * 3)] as Timeframe,
+                    capitalPct: trade.pct,
+                    tradeResult: trade.result,
+                    pipsTP1: trade.pipsTP1,
+                    pipsTP2: trade.pipsTP2,
+                    pipsTP3: trade.pipsTP3,
+                    pipsSL: trade.pipsSL,
+                    resultTP1: trade.resultTP1,
+                    resultTP2: trade.resultTP2,
+                    resultTP3: trade.resultTP3,
+                    notes: `Trade test #${sampleTrades.indexOf(trade) + 1}`,
+                  }
+                  addEntry(entry)
+                }
+              }}
+              className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-500 transition"
+            >
+              🎲 Générer données test
+            </button>
+          )}
           {weeklyStats.map((week, idx) => (
             <button
               key={idx}
