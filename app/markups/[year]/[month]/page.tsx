@@ -548,8 +548,53 @@ export default function MarkupsMonthPage() {
               </AreaChart>
             </ChartContainer>
           ) : (
-            <div className="flex h-[250px] items-center justify-center text-slate-500">
-              Ajoute des trades avec le % capital pour voir l&apos;évolution
+            <div className="flex h-[250px] flex-col items-center justify-center gap-4 text-slate-500">
+              <span>Ajoute des trades avec le % capital pour voir l&apos;évolution</span>
+              <button
+                onClick={async () => {
+                  // Générer des données d'exemple pour ce mois
+                  const sampleTrades = [
+                    { day: 2, pct: 1.2, result: "TP1" as TradeResult, pipsTP1: 45, resultTP1: "TP" as PartialResult },
+                    { day: 3, pct: 2.1, result: "TP2" as TradeResult, pipsTP1: 32, pipsTP2: 28, resultTP1: "TP" as PartialResult, resultTP2: "TP" as PartialResult },
+                    { day: 5, pct: -1.0, result: "SL" as TradeResult, pipsSL: 25 },
+                    { day: 7, pct: 1.8, result: "TP1" as TradeResult, pipsTP1: 52, resultTP1: "TP" as PartialResult },
+                    { day: 9, pct: 0, result: "BE" as TradeResult, pipsTP1: 38, resultTP1: "TP" as PartialResult, resultTP2: "BE" as PartialResult },
+                    { day: 10, pct: 3.2, result: "TP3" as TradeResult, pipsTP1: 28, pipsTP2: 35, pipsTP3: 42, resultTP1: "TP" as PartialResult, resultTP2: "TP" as PartialResult, resultTP3: "TP" as PartialResult },
+                    { day: 12, pct: 1.5, result: "TP1" as TradeResult, pipsTP1: 48, resultTP1: "TP" as PartialResult },
+                    { day: 14, pct: -0.8, result: "SL" as TradeResult, pipsSL: 20 },
+                    { day: 16, pct: 2.4, result: "TP2" as TradeResult, pipsTP1: 30, pipsTP2: 45, resultTP1: "TP" as PartialResult, resultTP2: "TP" as PartialResult },
+                    { day: 18, pct: 1.1, result: "TP1" as TradeResult, pipsTP1: 35, resultTP1: "TP" as PartialResult },
+                    { day: 20, pct: 0, result: "BE" as TradeResult, pipsTP1: 25, resultTP1: "TP" as PartialResult, resultTP2: "BE" as PartialResult },
+                    { day: 22, pct: 2.8, result: "TP2" as TradeResult, pipsTP1: 42, pipsTP2: 38, resultTP1: "TP" as PartialResult, resultTP2: "TP" as PartialResult },
+                    { day: 24, pct: -1.2, result: "SL" as TradeResult, pipsSL: 30 },
+                    { day: 26, pct: 1.9, result: "TP1" as TradeResult, pipsTP1: 55, resultTP1: "TP" as PartialResult },
+                    { day: 28, pct: 2.5, result: "TP2" as TradeResult, pipsTP1: 38, pipsTP2: 32, resultTP1: "TP" as PartialResult, resultTP2: "TP" as PartialResult },
+                  ]
+                  
+                  for (const trade of sampleTrades) {
+                    const entry: MarkupEntry = {
+                      id: crypto.randomUUID(),
+                      datetimeLocal: `${year}-${pad2(month)}-${pad2(trade.day)}T09:30`,
+                      symbol: "MSU",
+                      timeframe: "15m",
+                      capitalPct: trade.pct,
+                      tradeResult: trade.result,
+                      pipsTP1: trade.pipsTP1,
+                      pipsTP2: trade.pipsTP2,
+                      pipsTP3: trade.pipsTP3,
+                      pipsSL: trade.pipsSL,
+                      resultTP1: trade.resultTP1,
+                      resultTP2: trade.resultTP2,
+                      resultTP3: trade.resultTP3,
+                      notes: `Trade exemple du ${trade.day}/${month}`,
+                    }
+                    addEntry(entry)
+                  }
+                }}
+                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 transition"
+              >
+                Générer données exemple
+              </button>
             </div>
           )}
         </section>
