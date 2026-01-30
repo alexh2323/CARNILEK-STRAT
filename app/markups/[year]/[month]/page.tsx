@@ -727,7 +727,7 @@ function DayDrawer({
                     step="0.1"
                     value={form.pipsSL}
                     onChange={(e) => setForm((p) => ({ ...p, pipsSL: e.target.value }))}
-                    placeholder="ex: -25"
+                    placeholder="ex: 25"
                     className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
                   />
                 </label>
