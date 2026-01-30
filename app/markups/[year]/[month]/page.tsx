@@ -138,6 +138,10 @@ export default function MarkupsMonthPage() {
     return { ...stats, total, wins, winRate, beByPartial, totalBEPartials, slByPartial, totalSLPartials }
   }, [monthEntries])
 
+  // Capital initial du mois (modifiable)
+  const [startingCapital, setStartingCapital] = useState<number>(200000)
+  const [editingCapital, setEditingCapital] = useState(false)
+
   // Évolution du capital jour par jour (cumulatif)
   const capitalEvolution = useMemo(() => {
     // Trier les entrées par date
@@ -189,10 +193,6 @@ export default function MarkupsMonthPage() {
     }
     return arr
   }, [weeks.length, year, month])
-
-  // Capital initial du mois (modifiable)
-  const [startingCapital, setStartingCapital] = useState<number>(200000)
-  const [editingCapital, setEditingCapital] = useState(false)
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const selectedList = selectedDay ? entriesByDay.get(selectedDay) ?? [] : []
