@@ -1,63 +1,158 @@
 import { ALLOWED_TIMEFRAMES, type MarkupEntry } from "./types"
+import { supabase } from "@/lib/supabase/client"
 
-const STORAGE_KEY = "trading:markups:v1"
+const LOCAL_STORAGE_KEY = "trading:markups:v1"
 
-function safeParse(json: string): unknown {
-  try {
-    return JSON.parse(json)
-  } catch {
-    return null
+// Convertir depuis le format Supabase vers MarkupEntry
+function fromSupabase(row: any): MarkupEntry {
+  return {
+    id: row.id,
+    datetimeLocal: row.datetime_local,
+    symbol: row.symbol,
+    timeframe: row.timeframe,
+    strategy: row.strategy || '',
+    notes: row.notes || undefined,
+    screenshots: row.screenshots || undefined,
+    screenshotDataUrl: row.screenshot_data_url || undefined,
   }
 }
 
-function isMarkupEntry(x: any): x is MarkupEntry {
-  const isTf = (v: any) => (ALLOWED_TIMEFRAMES as readonly string[]).includes(String(v))
-  const isScreenshots =
-    typeof x?.screenshots === "undefined" ||
-    (Array.isArray(x.screenshots) &&
-      x.screenshots.every((s: any) => {
-        // compat: ancien format string[]
-        if (typeof s === "string") return true
-        // nouveau format {id, src, timeframe}
-        return (
-          s &&
-          typeof s === "object" &&
-          typeof s.id === "string" &&
-          typeof s.src === "string" &&
-          isTf(s.timeframe)
-        )
-      }))
-  return (
-    x &&
-    typeof x === "object" &&
-    typeof x.id === "string" &&
-    typeof x.datetimeLocal === "string" &&
-    typeof x.symbol === "string" &&
-    isTf(x.timeframe) &&
-    typeof x.strategy === "string" &&
-    (typeof x.notes === "undefined" || typeof x.notes === "string") &&
-    (typeof x.screenshotDataUrl === "undefined" || typeof x.screenshotDataUrl === "string") &&
-    isScreenshots
-  )
+// Convertir MarkupEntry vers le format Supabase
+function toSupabase(entry: MarkupEntry) {
+  return {
+    id: entry.id,
+    datetime_local: entry.datetimeLocal,
+    symbol: entry.symbol,
+    timeframe: entry.timeframe,
+    strategy: entry.strategy || '',
+    notes: entry.notes || null,
+    screenshots: entry.screenshots || null,
+    screenshot_data_url: entry.screenshotDataUrl || null,
+  }
 }
 
-export function loadMarkupsFromStorage(): MarkupEntry[] {
-  if (typeof window === "undefined") return []
-  const raw = window.localStorage.getItem(STORAGE_KEY)
-  if (!raw) return []
-  const parsed = safeParse(raw)
-  if (!Array.isArray(parsed)) return []
-  return parsed.filter(isMarkupEntry)
-}
-
-export function saveMarkupsToStorage(entries: MarkupEntry[]) {
+// Fonction de migration : localStorage -> Supabase (une seule fois)
+export async function migrateLocalStorageToSupabase(): Promise<void> {
   if (typeof window === "undefined") return
+  
+  const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY)
+  if (!raw) return
+  
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
-  } catch {
-    // si localStorage est plein (photos), on évite de casser l'app.
-    // On gérera une vraie persistance (IndexedDB) plus tard.
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed) || parsed.length === 0) return
+    
+    // Vérifier si déjà migré (si des données existent dans Supabase)
+    const { data: existing } = await supabase.from('markups').select('id').limit(1)
+    if (existing && existing.length > 0) {
+      console.log('Data already exists in Supabase, skipping migration')
+      // Supprimer les données locales après migration réussie
+      window.localStorage.removeItem(LOCAL_STORAGE_KEY)
+      return
+    }
+    
+    // Filtrer les entrées valides
+    const entries = parsed.filter((e: any) => 
+      e && typeof e === "object" && e.id && e.datetimeLocal
+    )
+    
+    if (entries.length > 0) {
+      const { error } = await supabase.from('markups').insert(
+        entries.map((e: any) => toSupabase(e))
+      )
+      
+      if (error) {
+        console.error('Migration error:', error)
+      } else {
+        console.log(`Migrated ${entries.length} entries to Supabase`)
+        // Supprimer les données locales après migration réussie
+        window.localStorage.removeItem(LOCAL_STORAGE_KEY)
+      }
+    }
+  } catch (err) {
+    console.error('Migration failed:', err)
   }
 }
 
+// Charger les markups depuis Supabase
+export async function loadMarkupsFromStorage(): Promise<MarkupEntry[]> {
+  try {
+    const { data, error } = await supabase
+      .from('markups')
+      .select('*')
+      .order('datetime_local', { ascending: false })
+    
+    if (error) {
+      console.error('Error loading markups:', error)
+      return []
+    }
+    
+    return (data || []).map(fromSupabase)
+  } catch (err) {
+    console.error('Error loading markups:', err)
+    return []
+  }
+}
 
+// Ajouter un markup
+export async function addMarkupToStorage(entry: MarkupEntry): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('markups')
+      .insert(toSupabase(entry))
+    
+    if (error) {
+      console.error('Error adding markup:', error)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('Error adding markup:', err)
+    return false
+  }
+}
+
+// Mettre à jour un markup
+export async function updateMarkupInStorage(entry: MarkupEntry): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('markups')
+      .update(toSupabase(entry))
+      .eq('id', entry.id)
+    
+    if (error) {
+      console.error('Error updating markup:', error)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('Error updating markup:', err)
+    return false
+  }
+}
+
+// Supprimer un markup
+export async function deleteMarkupFromStorage(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('markups')
+      .delete()
+      .eq('id', id)
+    
+    if (error) {
+      console.error('Error deleting markup:', error)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('Error deleting markup:', err)
+    return false
+  }
+}
+
+// Sauvegarder tous les markups (remplace tout)
+export async function saveMarkupsToStorage(entries: MarkupEntry[]): Promise<void> {
+  // Cette fonction n'est plus utilisée directement
+  // On utilise addMarkupToStorage, updateMarkupInStorage, deleteMarkupFromStorage
+  console.warn('saveMarkupsToStorage is deprecated, use individual CRUD operations instead')
+}
