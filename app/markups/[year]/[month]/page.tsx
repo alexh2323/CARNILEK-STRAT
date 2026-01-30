@@ -673,21 +673,20 @@ function DayDrawer({
 
               {/* Pips */}
               <div className="mt-4 space-y-3">
-                <label className="block text-sm font-medium text-slate-200">
-                  Pips total
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.pips}
-                    onChange={(e) => setForm((p) => ({ ...p, pips: e.target.value }))}
-                    placeholder="ex: 78"
-                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
-                  />
-                </label>
-
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-5 gap-2">
                   <label className="block text-sm font-medium text-slate-200">
-                    Pips TP1
+                    Total
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={form.pips}
+                      onChange={(e) => setForm((p) => ({ ...p, pips: e.target.value }))}
+                      placeholder="78"
+                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    TP1
                     <input
                       type="number"
                       step="0.1"
@@ -698,7 +697,7 @@ function DayDrawer({
                     />
                   </label>
                   <label className="block text-sm font-medium text-slate-200">
-                    Pips TP2
+                    TP2
                     <input
                       type="number"
                       step="0.1"
@@ -709,7 +708,7 @@ function DayDrawer({
                     />
                   </label>
                   <label className="block text-sm font-medium text-slate-200">
-                    Pips TP3
+                    TP3
                     <input
                       type="number"
                       step="0.1"
@@ -719,18 +718,18 @@ function DayDrawer({
                       className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
                     />
                   </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    SL
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={form.pipsSL}
+                      onChange={(e) => setForm((p) => ({ ...p, pipsSL: e.target.value }))}
+                      placeholder="25"
+                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                    />
+                  </label>
                 </div>
-                <label className="mt-2 block text-sm font-medium text-slate-200">
-                  Pips SL (Stop Loss)
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.pipsSL}
-                    onChange={(e) => setForm((p) => ({ ...p, pipsSL: e.target.value }))}
-                    placeholder="ex: 25"
-                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
-                  />
-                </label>
               </div>
 
               <label className="mt-3 block text-sm font-medium text-slate-200">
