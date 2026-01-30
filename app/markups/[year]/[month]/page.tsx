@@ -142,46 +142,6 @@ export default function MarkupsMonthPage() {
   const [startingCapital, setStartingCapital] = useState<number>(200000)
   const [editingCapital, setEditingCapital] = useState(false)
 
-  // Évolution du capital jour par jour (cumulatif)
-  const filteredCapitalEvolution = useMemo(() => {
-    // Trier les entrées par date
-    const sorted = [...monthEntries].sort((a, b) => a.datetimeLocal.localeCompare(b.datetimeLocal))
-    
-    const data: Array<{ day: string; capital: number; pct: number; trades: number }> = []
-    let currentCapital = startingCapital
-    let cumulPct = 0
-    let tradeCount = 0
-    
-    // Grouper par jour
-    const byDay = new Map<string, typeof sorted>()
-    for (const e of sorted) {
-      const day = e.datetimeLocal.split("T")[0]
-      const list = byDay.get(day) || []
-      list.push(e)
-      byDay.set(day, list)
-    }
-    
-    // Calculer le capital cumulatif pour chaque jour
-    for (const [day, entries] of byDay) {
-      for (const e of entries) {
-        if (e.capitalPct !== undefined) {
-          cumulPct += e.capitalPct
-          currentCapital = startingCapital * (1 + cumulPct / 100)
-          tradeCount++
-        }
-      }
-      const dayNum = parseInt(day.split("-")[2])
-      data.push({
-        day: `${dayNum}`,
-        capital: Math.round(currentCapital),
-        pct: Math.round(cumulPct * 10) / 10,
-        trades: tradeCount,
-      })
-    }
-    
-    return data
-  }, [monthEntries, startingCapital])
-
   const weekGainsPct = useMemo(() => {
     // fictif: gains % par semaine (W1..Wn) basé sur le nombre de semaines affichées
     const arr: Array<{ label: string; pct: number }> = []
