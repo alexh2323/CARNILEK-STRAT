@@ -288,7 +288,7 @@ export default function MarkupsMonthPage() {
         {/* Stats des résultats du mois */}
         <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-slate-100">📊 Résultats du mois</h2>
+            <h2 className="text-lg font-semibold text-slate-100">Résultats du mois</h2>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-3">
