@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Clock,
   Image as ImageIcon,
+  Pencil,
   Plus,
   Trash2,
   X,
@@ -339,6 +340,7 @@ function DayDrawer({
   onUpdate: (id: string, updater: (e: MarkupEntry) => MarkupEntry) => void
 }) {
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
   const defaultTime = "09:15"
@@ -365,6 +367,7 @@ function DayDrawer({
     if (lastDay.current === dayKey) return
     lastDay.current = dayKey
     setShowForm(false)
+    setEditingId(null)
     setIsDragging(false)
     setForm({
       datetimeLocal: defaultDatetimeLocal,
@@ -374,6 +377,32 @@ function DayDrawer({
       screenshots: [],
     })
   }, [open, dayKey, defaultDatetimeLocal])
+
+  // Ouvrir le formulaire en mode édition
+  const startEditing = (entry: MarkupEntry) => {
+    setEditingId(entry.id)
+    setForm({
+      datetimeLocal: entry.datetimeLocal,
+      symbol: entry.symbol,
+      timeframe: entry.timeframe as Timeframe,
+      notes: entry.notes || "",
+      screenshots: entry.screenshots || [],
+    })
+    setShowForm(true)
+  }
+
+  // Annuler l'édition
+  const cancelEditing = () => {
+    setEditingId(null)
+    setShowForm(false)
+    setForm({
+      datetimeLocal: defaultDatetimeLocal,
+      symbol: "MSU",
+      timeframe: "M15",
+      notes: "",
+      screenshots: [],
+    })
+  }
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -397,21 +426,41 @@ function DayDrawer({
     e.preventDefault()
     const symbol = form.symbol.trim().toUpperCase()
     if (!symbol) return
-    const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now())
 
-    onAdd({
-      id,
-      datetimeLocal: form.datetimeLocal,
-      symbol,
-      timeframe: form.timeframe,
-      // Pas de stratégie ici (base), on garde une string vide pour compat
-      strategy: "",
-      notes: form.notes.trim() || undefined,
-      screenshots: form.screenshots.length ? form.screenshots : undefined,
-      // legacy: on garde la première image si besoin
-      screenshotDataUrl: form.screenshots[0]?.src || undefined,
-    })
+    if (editingId) {
+      // Mode édition : mettre à jour l'entrée existante
+      onUpdate(editingId, (prev) => ({
+        ...prev,
+        datetimeLocal: form.datetimeLocal,
+        symbol,
+        timeframe: form.timeframe,
+        notes: form.notes.trim() || undefined,
+        screenshots: form.screenshots.length ? form.screenshots : undefined,
+        screenshotDataUrl: form.screenshots[0]?.src || undefined,
+      }))
+      setEditingId(null)
+    } else {
+      // Mode création : ajouter une nouvelle entrée
+      const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now())
+      onAdd({
+        id,
+        datetimeLocal: form.datetimeLocal,
+        symbol,
+        timeframe: form.timeframe,
+        strategy: "",
+        notes: form.notes.trim() || undefined,
+        screenshots: form.screenshots.length ? form.screenshots : undefined,
+        screenshotDataUrl: form.screenshots[0]?.src || undefined,
+      })
+    }
     setShowForm(false)
+    setForm({
+      datetimeLocal: defaultDatetimeLocal,
+      symbol: "MSU",
+      timeframe: "M15",
+      notes: "",
+      screenshots: [],
+    })
   }
 
   if (!open) return null
@@ -446,7 +495,14 @@ function DayDrawer({
             <p className="text-sm text-slate-300">{entries.length} entrées</p>
             <button
               type="button"
-              onClick={() => setShowForm((v) => !v)}
+              onClick={() => {
+                if (showForm && !editingId) {
+                  setShowForm(false)
+                } else {
+                  cancelEditing()
+                  setShowForm(true)
+                }
+              }}
               className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-slate-50"
             >
               <Plus className="h-4 w-4" />
@@ -455,7 +511,21 @@ function DayDrawer({
           </div>
 
           {showForm && (
-            <form onSubmit={submit} className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-4 shadow-sm">
+            <form onSubmit={submit} className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-5 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-slate-100">
+                  {editingId ? "Modifier l'entrée" : "Nouvelle entrée"}
+                </h3>
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={cancelEditing}
+                    className="text-sm text-slate-400 hover:text-slate-200"
+                  >
+                    Annuler
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="text-sm font-medium text-slate-200">
                   Date & heure
@@ -641,9 +711,19 @@ function DayDrawer({
                         {e.datetimeLocal.replace("T", " ")}
                       </p>
                     </div>
-                    <span className="rounded-full bg-slate-950/60 px-2 py-1 text-xs font-semibold text-slate-200 ring-1 ring-slate-800">
-                      {e.symbol.toUpperCase()} {e.timeframe}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startEditing(e)}
+                        className="rounded-lg bg-slate-800 p-2 text-slate-300 hover:bg-slate-700 hover:text-slate-100 transition"
+                        title="Modifier"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <span className="rounded-full bg-slate-950/60 px-2 py-1 text-xs font-semibold text-slate-200 ring-1 ring-slate-800">
+                        {e.symbol.toUpperCase()} {e.timeframe}
+                      </span>
+                    </div>
                   </div>
 
                   {(e.screenshots?.length || e.screenshotDataUrl) && (
