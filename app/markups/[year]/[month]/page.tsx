@@ -113,15 +113,22 @@ export default function MarkupsMonthPage() {
   // Stats des résultats du mois
   const resultStats = useMemo(() => {
     const stats = { TP1: 0, TP2: 0, TP3: 0, BE: 0, SL: 0 }
+    // Compteur BE par niveau de partiel
+    const beByPartial = { TP1: 0, TP2: 0 }
+    
     for (const e of monthEntries) {
       if (e.tradeResult && e.tradeResult in stats) {
         stats[e.tradeResult as keyof typeof stats]++
       }
+      // Compter les BE par partiel
+      if (e.resultTP1 === "BE") beByPartial.TP1++
+      if (e.resultTP2 === "BE") beByPartial.TP2++
     }
     const total = stats.TP1 + stats.TP2 + stats.TP3 + stats.BE + stats.SL
     const wins = stats.TP1 + stats.TP2 + stats.TP3
     const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
-    return { ...stats, total, wins, winRate }
+    const totalBEPartials = beByPartial.TP1 + beByPartial.TP2
+    return { ...stats, total, wins, winRate, beByPartial, totalBEPartials }
   }, [monthEntries])
 
   const weekGainsPct = useMemo(() => {
@@ -301,9 +308,16 @@ export default function MarkupsMonthPage() {
               <span className="rounded-lg bg-emerald-900/60 px-3 py-1.5 text-sm font-semibold text-emerald-200">
                 TP3: {resultStats.TP3} <span className="text-emerald-300/70">({resultStats.total > 0 ? Math.round((resultStats.TP3 / resultStats.total) * 100) : 0}%)</span>
               </span>
-              <span className="rounded-lg bg-yellow-900/40 px-3 py-1.5 text-sm font-semibold text-yellow-300">
-                BE: {resultStats.BE} <span className="text-yellow-400/70">({resultStats.total > 0 ? Math.round((resultStats.BE / resultStats.total) * 100) : 0}%)</span>
-              </span>
+              <div className="flex flex-col gap-1">
+                <span className="rounded-lg bg-yellow-900/40 px-3 py-1.5 text-sm font-semibold text-yellow-300">
+                  BE: {resultStats.BE} <span className="text-yellow-400/70">({resultStats.total > 0 ? Math.round((resultStats.BE / resultStats.total) * 100) : 0}%)</span>
+                </span>
+                {resultStats.totalBEPartials > 0 && (
+                  <span className="text-[10px] text-yellow-400/60 px-2">
+                    TP1: {resultStats.beByPartial.TP1} ({resultStats.totalBEPartials > 0 ? Math.round((resultStats.beByPartial.TP1 / resultStats.totalBEPartials) * 100) : 0}%) • TP2: {resultStats.beByPartial.TP2} ({resultStats.totalBEPartials > 0 ? Math.round((resultStats.beByPartial.TP2 / resultStats.totalBEPartials) * 100) : 0}%)
+                  </span>
+                )}
+              </div>
               <span className="rounded-lg bg-red-900/40 px-3 py-1.5 text-sm font-semibold text-red-300">
                 SL: {resultStats.SL} <span className="text-red-400/70">({resultStats.total > 0 ? Math.round((resultStats.SL / resultStats.total) * 100) : 0}%)</span>
               </span>
