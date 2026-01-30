@@ -558,6 +558,10 @@ export default function MarkupsMonthPage() {
                   axisLine={false}
                   tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
                   dx={-10}
+                  domain={[
+                    (dataMin: number) => Math.floor(Math.min(dataMin, startingCapital) * 0.95 / 1000) * 1000,
+                    (dataMax: number) => Math.ceil(Math.max(dataMax, startingCapital) * 1.05 / 1000) * 1000
+                  ]}
                 />
                 <ChartTooltip
                   content={
