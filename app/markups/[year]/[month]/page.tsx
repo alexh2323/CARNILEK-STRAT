@@ -22,7 +22,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledBars } from "@/components/ui/labeled-bars"
 import { fileToCompressedDataUrl } from "@/lib/images/toDataUrl"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart } from "recharts"
 
 const DAYS_FR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
 const MONTHS_FR = [
@@ -383,65 +383,94 @@ export default function MarkupsMonthPage() {
           </div>
         </section>
 
-        {/* Évolution du capital */}
-        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
+        {/* Évolution du capital - Style Cashflow */}
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-lg">
+          <div className="mb-6 flex items-start justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-100">Évolution du Capital</h2>
-              <p className="text-sm text-slate-400">Progression cumulée au fil des trades</p>
+              <h2 className="text-lg font-semibold text-slate-100">Cashflow</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                1 {MONTHS_FR[month - 1]} - {new Date(year, month, 0).getDate()} {MONTHS_FR[month - 1]}, {year}
+              </p>
+              <div className="mt-3 flex items-center gap-3">
+                {editingCapital ? (
+                  <input
+                    type="number"
+                    value={startingCapital}
+                    onChange={(e) => setStartingCapital(Number(e.target.value))}
+                    onBlur={() => setEditingCapital(false)}
+                    onKeyDown={(e) => e.key === "Enter" && setEditingCapital(false)}
+                    autoFocus
+                    className="w-40 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-2xl font-bold text-slate-100"
+                  />
+                ) : (
+                  <button
+                    onClick={() => setEditingCapital(true)}
+                    className="text-4xl font-bold text-slate-100 hover:text-slate-200 transition"
+                  >
+                    {(capitalEvolution.length > 0 ? capitalEvolution[capitalEvolution.length - 1].capital : startingCapital).toLocaleString()}€
+                  </button>
+                )}
+                {capitalEvolution.length > 0 && (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold ${
+                    capitalEvolution[capitalEvolution.length - 1]?.pct >= 0 
+                      ? "bg-green-500/20 text-green-400" 
+                      : "bg-red-500/20 text-red-400"
+                  }`}>
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d={capitalEvolution[capitalEvolution.length - 1]?.pct >= 0 
+                        ? "M2 12l5 5L22 2" 
+                        : "M2 2l20 20"} 
+                      />
+                    </svg>
+                    {capitalEvolution[capitalEvolution.length - 1]?.pct > 0 ? "+" : ""}
+                    {capitalEvolution[capitalEvolution.length - 1]?.pct || 0}%
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-400">Capital initial:</span>
-              {editingCapital ? (
-                <input
-                  type="number"
-                  value={startingCapital}
-                  onChange={(e) => setStartingCapital(Number(e.target.value))}
-                  onBlur={() => setEditingCapital(false)}
-                  onKeyDown={(e) => e.key === "Enter" && setEditingCapital(false)}
-                  autoFocus
-                  className="w-32 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
-                />
-              ) : (
-                <button
-                  onClick={() => setEditingCapital(true)}
-                  className="rounded-lg bg-slate-800 px-3 py-1 text-sm font-medium text-slate-100 hover:bg-slate-700"
-                >
-                  {startingCapital.toLocaleString()}€
-                </button>
-              )}
+            <div className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2">
+              <span className="text-sm text-slate-300">{MONTHS_FR[month - 1]} {year}</span>
             </div>
           </div>
+
           {capitalEvolution.length > 0 ? (
             <ChartContainer
               config={{
                 capital: {
                   label: "Capital",
-                  color: "#22c55e",
+                  color: "#8b5cf6",
                 },
               }}
-              className="h-[200px] w-full"
+              className="h-[250px] w-full"
             >
-              <LineChart data={capitalEvolution} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+              <AreaChart data={capitalEvolution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="capitalGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={true} vertical={false} />
                 <XAxis 
                   dataKey="day" 
-                  stroke="#94a3b8" 
+                  stroke="#475569" 
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
+                  dy={10}
                 />
                 <YAxis 
-                  stroke="#94a3b8" 
+                  stroke="#475569" 
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                  tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+                  dx={-10}
                 />
                 <ChartTooltip
                   content={
                     <ChartTooltipContent
-                      className="bg-slate-900 border-slate-700"
+                      className="bg-slate-900 border-slate-700 shadow-xl"
                       labelFormatter={(value) => `Jour ${value}`}
                       formatter={(value, name, item) => (
                         <span className="text-slate-100">
@@ -451,18 +480,19 @@ export default function MarkupsMonthPage() {
                     />
                   }
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="capital"
-                  stroke={capitalEvolution[capitalEvolution.length - 1]?.pct >= 0 ? "#22c55e" : "#ef4444"}
-                  strokeWidth={2}
-                  dot={{ fill: capitalEvolution[capitalEvolution.length - 1]?.pct >= 0 ? "#22c55e" : "#ef4444", strokeWidth: 0, r: 4 }}
-                  activeDot={{ r: 6 }}
+                  stroke="#8b5cf6"
+                  strokeWidth={2.5}
+                  fill="url(#capitalGradient)"
+                  dot={{ fill: "#8b5cf6", strokeWidth: 0, r: 0 }}
+                  activeDot={{ r: 6, fill: "#8b5cf6", stroke: "#fff", strokeWidth: 2 }}
                 />
-              </LineChart>
+              </AreaChart>
             </ChartContainer>
           ) : (
-            <div className="flex h-[200px] items-center justify-center text-slate-500">
+            <div className="flex h-[250px] items-center justify-center text-slate-500">
               Ajoute des trades avec le % capital pour voir l&apos;évolution
             </div>
           )}
