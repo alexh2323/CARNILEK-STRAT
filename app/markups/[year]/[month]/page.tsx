@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useMarkups } from "@/components/markups/useMarkups"
-import { ALLOWED_TIMEFRAMES, type MarkupEntry, type Screenshot, type Timeframe } from "@/lib/markups/types"
+import { ALLOWED_TIMEFRAMES, ALLOWED_CHARACTERISTICS, CHARACTERISTIC_LABELS, type MarkupEntry, type Screenshot, type Timeframe, type Characteristic } from "@/lib/markups/types"
 import { countByHour, getEntryDay, getEntryMonth, getEntryYear, timeframeDistribution } from "@/lib/markups/metrics"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledBars } from "@/components/ui/labeled-bars"
@@ -350,12 +350,14 @@ function DayDrawer({
     datetimeLocal: string
     symbol: string
     timeframe: Timeframe
+    characteristics: Characteristic[]
     notes: string
     screenshots: Screenshot[]
   }>({
     datetimeLocal: defaultDatetimeLocal,
     symbol: "MSU",
     timeframe: "M15",
+    characteristics: [],
     notes: "",
     screenshots: [],
   })
@@ -373,6 +375,7 @@ function DayDrawer({
       datetimeLocal: defaultDatetimeLocal,
       symbol: "MSU",
       timeframe: "M15",
+      characteristics: [],
       notes: "",
       screenshots: [],
     })
@@ -385,6 +388,7 @@ function DayDrawer({
       datetimeLocal: entry.datetimeLocal,
       symbol: entry.symbol,
       timeframe: entry.timeframe as Timeframe,
+      characteristics: entry.characteristics || [],
       notes: entry.notes || "",
       screenshots: entry.screenshots || [],
     })
@@ -399,6 +403,7 @@ function DayDrawer({
       datetimeLocal: defaultDatetimeLocal,
       symbol: "MSU",
       timeframe: "M15",
+      characteristics: [],
       notes: "",
       screenshots: [],
     })
@@ -434,6 +439,7 @@ function DayDrawer({
         datetimeLocal: form.datetimeLocal,
         symbol,
         timeframe: form.timeframe,
+        characteristics: form.characteristics.length ? form.characteristics : undefined,
         notes: form.notes.trim() || undefined,
         screenshots: form.screenshots.length ? form.screenshots : undefined,
         screenshotDataUrl: form.screenshots[0]?.src || undefined,
@@ -448,6 +454,7 @@ function DayDrawer({
         symbol,
         timeframe: form.timeframe,
         strategy: "",
+        characteristics: form.characteristics.length ? form.characteristics : undefined,
         notes: form.notes.trim() || undefined,
         screenshots: form.screenshots.length ? form.screenshots : undefined,
         screenshotDataUrl: form.screenshots[0]?.src || undefined,
@@ -458,6 +465,7 @@ function DayDrawer({
       datetimeLocal: defaultDatetimeLocal,
       symbol: "MSU",
       timeframe: "M15",
+      characteristics: [],
       notes: "",
       screenshots: [],
     })
@@ -545,9 +553,31 @@ function DayDrawer({
                     className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
                   >
                     <option value="MSU">MSU</option>
-                    <option value="LIT">LIT</option>
                   </select>
                 </label>
+
+                <div className="text-sm font-medium text-slate-200">
+                  Caractéristique
+                  <div className="mt-2 space-y-2">
+                    {ALLOWED_CHARACTERISTICS.map((char) => (
+                      <label key={char} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.characteristics.includes(char)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setForm((p) => ({ ...p, characteristics: [...p.characteristics, char] }))
+                            } else {
+                              setForm((p) => ({ ...p, characteristics: p.characteristics.filter((c) => c !== char) }))
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-blue-500 focus:ring-blue-500"
+                        />
+                        <span className="text-slate-300 font-normal">{CHARACTERISTIC_LABELS[char]}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
                 <label className="text-sm font-medium text-slate-200">
                   Unité de temps
@@ -710,6 +740,18 @@ function DayDrawer({
                       <p className="mt-1 text-xs text-slate-300">
                         {e.datetimeLocal.replace("T", " ")}
                       </p>
+                      {e.characteristics && e.characteristics.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {e.characteristics.map((char) => (
+                            <span
+                              key={char}
+                              className="rounded-full bg-blue-900/40 px-2 py-0.5 text-xs font-medium text-blue-300 ring-1 ring-blue-800/50"
+                            >
+                              {CHARACTERISTIC_LABELS[char]}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
