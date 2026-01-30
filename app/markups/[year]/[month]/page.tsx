@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useMarkups } from "@/components/markups/useMarkups"
-import { ALLOWED_TIMEFRAMES, ALLOWED_CHARACTERISTICS, CHARACTERISTIC_LABELS, ALLOWED_TRADE_RESULTS, TRADE_RESULT_LABELS, TRADE_RESULT_COLORS, type MarkupEntry, type Screenshot, type Timeframe, type Characteristic, type TradeResult } from "@/lib/markups/types"
+import { ALLOWED_TIMEFRAMES, ALLOWED_CHARACTERISTICS, CHARACTERISTIC_LABELS, ALLOWED_TRADE_RESULTS, TRADE_RESULT_LABELS, TRADE_RESULT_COLORS, ALLOWED_PARTIAL_RESULTS, PARTIAL_RESULT_COLORS, type MarkupEntry, type Screenshot, type Timeframe, type Characteristic, type TradeResult, type PartialResult } from "@/lib/markups/types"
 import { countByHour, getEntryDay, getEntryMonth, getEntryYear, timeframeDistribution } from "@/lib/markups/metrics"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledBars } from "@/components/ui/labeled-bars"
@@ -354,8 +354,11 @@ function DayDrawer({
     tradeResult: TradeResult | ""
     pips: string
     pipsTP1: string
+    resultTP1: PartialResult | ""
     pipsTP2: string
+    resultTP2: PartialResult | ""
     pipsTP3: string
+    resultTP3: PartialResult | ""
     pipsSL: string
     notes: string
     screenshots: Screenshot[]
@@ -367,8 +370,11 @@ function DayDrawer({
     tradeResult: "",
     pips: "",
     pipsTP1: "",
+    resultTP1: "",
     pipsTP2: "",
+    resultTP2: "",
     pipsTP3: "",
+    resultTP3: "",
     pipsSL: "",
     notes: "",
     screenshots: [],
@@ -391,8 +397,11 @@ function DayDrawer({
       tradeResult: "",
       pips: "",
       pipsTP1: "",
+      resultTP1: "",
       pipsTP2: "",
+      resultTP2: "",
       pipsTP3: "",
+      resultTP3: "",
       pipsSL: "",
       notes: "",
       screenshots: [],
@@ -410,8 +419,11 @@ function DayDrawer({
       tradeResult: entry.tradeResult || "",
       pips: entry.pips?.toString() || "",
       pipsTP1: entry.pipsTP1?.toString() || "",
+      resultTP1: entry.resultTP1 || "",
       pipsTP2: entry.pipsTP2?.toString() || "",
+      resultTP2: entry.resultTP2 || "",
       pipsTP3: entry.pipsTP3?.toString() || "",
+      resultTP3: entry.resultTP3 || "",
       pipsSL: entry.pipsSL?.toString() || "",
       notes: entry.notes || "",
       screenshots: entry.screenshots || [],
@@ -431,8 +443,11 @@ function DayDrawer({
       tradeResult: "",
       pips: "",
       pipsTP1: "",
+      resultTP1: "",
       pipsTP2: "",
+      resultTP2: "",
       pipsTP3: "",
+      resultTP3: "",
       pipsSL: "",
       notes: "",
       screenshots: [],
@@ -479,8 +494,11 @@ function DayDrawer({
         tradeResult: form.tradeResult || undefined,
         pips: pipsNum,
         pipsTP1: pipsTP1Num,
+        resultTP1: form.resultTP1 || undefined,
         pipsTP2: pipsTP2Num,
+        resultTP2: form.resultTP2 || undefined,
         pipsTP3: pipsTP3Num,
+        resultTP3: form.resultTP3 || undefined,
         pipsSL: pipsSLNum,
         notes: form.notes.trim() || undefined,
         screenshots: form.screenshots.length ? form.screenshots : undefined,
@@ -500,8 +518,11 @@ function DayDrawer({
         tradeResult: form.tradeResult || undefined,
         pips: pipsNum,
         pipsTP1: pipsTP1Num,
+        resultTP1: form.resultTP1 || undefined,
         pipsTP2: pipsTP2Num,
+        resultTP2: form.resultTP2 || undefined,
         pipsTP3: pipsTP3Num,
+        resultTP3: form.resultTP3 || undefined,
         pipsSL: pipsSLNum,
         notes: form.notes.trim() || undefined,
         screenshots: form.screenshots.length ? form.screenshots : undefined,
@@ -517,8 +538,11 @@ function DayDrawer({
       tradeResult: "",
       pips: "",
       pipsTP1: "",
+      resultTP1: "",
       pipsTP2: "",
+      resultTP2: "",
       pipsTP3: "",
+      resultTP3: "",
       pipsSL: "",
       notes: "",
       screenshots: [],
@@ -674,61 +698,118 @@ function DayDrawer({
               {/* Pips */}
               <div className="mt-4 space-y-3">
                 <div className="grid grid-cols-5 gap-2">
-                  <label className="block text-sm font-medium text-slate-200">
-                    Total
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={form.pips}
-                      onChange={(e) => setForm((p) => ({ ...p, pips: e.target.value }))}
-                      placeholder="78"
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
-                    />
-                  </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    TP1
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={form.pipsTP1}
-                      onChange={(e) => setForm((p) => ({ ...p, pipsTP1: e.target.value }))}
-                      placeholder="57"
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
-                    />
-                  </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    TP2
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={form.pipsTP2}
-                      onChange={(e) => setForm((p) => ({ ...p, pipsTP2: e.target.value }))}
-                      placeholder="28"
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
-                    />
-                  </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    TP3
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={form.pipsTP3}
-                      onChange={(e) => setForm((p) => ({ ...p, pipsTP3: e.target.value }))}
-                      placeholder="15"
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
-                    />
-                  </label>
-                  <label className="block text-sm font-medium text-slate-200">
-                    SL
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={form.pipsSL}
-                      onChange={(e) => setForm((p) => ({ ...p, pipsSL: e.target.value }))}
-                      placeholder="25"
-                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
-                    />
-                  </label>
+                  {/* Total */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-200">
+                      Total
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={form.pips}
+                        onChange={(e) => setForm((p) => ({ ...p, pips: e.target.value }))}
+                        placeholder="78"
+                        className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                      />
+                    </label>
+                  </div>
+                  {/* TP1 */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-200">
+                      TP1
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={form.pipsTP1}
+                        onChange={(e) => setForm((p) => ({ ...p, pipsTP1: e.target.value }))}
+                        placeholder="57"
+                        className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                      />
+                    </label>
+                    <div className="mt-1 flex gap-1">
+                      {ALLOWED_PARTIAL_RESULTS.map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setForm((p) => ({ ...p, resultTP1: p.resultTP1 === r ? "" : r }))}
+                          className={`flex-1 rounded px-1 py-0.5 text-[10px] font-medium transition ${
+                            form.resultTP1 === r ? PARTIAL_RESULT_COLORS[r] : "bg-slate-800 text-slate-500 hover:bg-slate-700"
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* TP2 */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-200">
+                      TP2
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={form.pipsTP2}
+                        onChange={(e) => setForm((p) => ({ ...p, pipsTP2: e.target.value }))}
+                        placeholder="28"
+                        className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                      />
+                    </label>
+                    <div className="mt-1 flex gap-1">
+                      {ALLOWED_PARTIAL_RESULTS.map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setForm((p) => ({ ...p, resultTP2: p.resultTP2 === r ? "" : r }))}
+                          className={`flex-1 rounded px-1 py-0.5 text-[10px] font-medium transition ${
+                            form.resultTP2 === r ? PARTIAL_RESULT_COLORS[r] : "bg-slate-800 text-slate-500 hover:bg-slate-700"
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* TP3 */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-200">
+                      TP3
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={form.pipsTP3}
+                        onChange={(e) => setForm((p) => ({ ...p, pipsTP3: e.target.value }))}
+                        placeholder="15"
+                        className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                      />
+                    </label>
+                    <div className="mt-1 flex gap-1">
+                      {ALLOWED_PARTIAL_RESULTS.map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setForm((p) => ({ ...p, resultTP3: p.resultTP3 === r ? "" : r }))}
+                          className={`flex-1 rounded px-1 py-0.5 text-[10px] font-medium transition ${
+                            form.resultTP3 === r ? PARTIAL_RESULT_COLORS[r] : "bg-slate-800 text-slate-500 hover:bg-slate-700"
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* SL */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-200">
+                      SL
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={form.pipsSL}
+                        onChange={(e) => setForm((p) => ({ ...p, pipsSL: e.target.value }))}
+                        placeholder="25"
+                        className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -905,14 +986,41 @@ function DayDrawer({
                       )}
                       {/* Détail des partiels */}
                       {(e.pipsTP1 !== undefined || e.pipsTP2 !== undefined || e.pipsTP3 !== undefined || e.pipsSL !== undefined) && (
-                        <p className="mt-1 text-xs text-slate-400">
-                          {[
-                            e.pipsTP1 !== undefined && `TP1: ${e.pipsTP1}`,
-                            e.pipsTP2 !== undefined && `TP2: ${e.pipsTP2}`,
-                            e.pipsTP3 !== undefined && `TP3: ${e.pipsTP3}`,
-                            e.pipsSL !== undefined && `SL: ${e.pipsSL}`,
-                          ].filter(Boolean).join(" • ")}
-                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                          {e.pipsTP1 !== undefined && (
+                            <span className="text-slate-400">
+                              TP1: {e.pipsTP1}
+                              {e.resultTP1 && (
+                                <span className={`ml-1 rounded px-1 py-0.5 text-[10px] ${PARTIAL_RESULT_COLORS[e.resultTP1]}`}>
+                                  {e.resultTP1}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                          {e.pipsTP2 !== undefined && (
+                            <span className="text-slate-400">
+                              TP2: {e.pipsTP2}
+                              {e.resultTP2 && (
+                                <span className={`ml-1 rounded px-1 py-0.5 text-[10px] ${PARTIAL_RESULT_COLORS[e.resultTP2]}`}>
+                                  {e.resultTP2}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                          {e.pipsTP3 !== undefined && (
+                            <span className="text-slate-400">
+                              TP3: {e.pipsTP3}
+                              {e.resultTP3 && (
+                                <span className={`ml-1 rounded px-1 py-0.5 text-[10px] ${PARTIAL_RESULT_COLORS[e.resultTP3]}`}>
+                                  {e.resultTP3}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                          {e.pipsSL !== undefined && (
+                            <span className="text-slate-400">SL: {e.pipsSL}</span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="flex items-center gap-2">

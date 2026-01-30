@@ -36,6 +36,17 @@ export const TRADE_RESULT_COLORS: Record<TradeResult, string> = {
   BE: "bg-yellow-900/40 text-yellow-300 ring-yellow-800/50",
 }
 
+// Résultat individuel pour chaque partiel (TP1, TP2, TP3)
+export const ALLOWED_PARTIAL_RESULTS = ["SL", "BE", "TP"] as const
+
+export type PartialResult = (typeof ALLOWED_PARTIAL_RESULTS)[number]
+
+export const PARTIAL_RESULT_COLORS: Record<PartialResult, string> = {
+  SL: "bg-red-900/50 text-red-300",
+  BE: "bg-yellow-900/50 text-yellow-300",
+  TP: "bg-green-900/50 text-green-300",
+}
+
 export type Screenshot = {
   id: string
   src: string
@@ -62,10 +73,16 @@ export type MarkupEntry = {
   pips?: number
   /** Pips du partiel 1 (TP1) */
   pipsTP1?: number
+  /** Résultat du TP1: SL, BE ou TP */
+  resultTP1?: PartialResult
   /** Pips du partiel 2 (TP2) */
   pipsTP2?: number
+  /** Résultat du TP2: SL, BE ou TP */
+  resultTP2?: PartialResult
   /** Pips du partiel 3 (TP3) */
   pipsTP3?: number
+  /** Résultat du TP3: SL, BE ou TP */
+  resultTP3?: PartialResult
   /** Pips du Stop Loss */
   pipsSL?: number
   /** Notes libres */
