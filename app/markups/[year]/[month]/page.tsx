@@ -647,24 +647,30 @@ function DayDrawer({
                   </div>
 
                   {(e.screenshots?.length || e.screenshotDataUrl) && (
-                    <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="mt-3 space-y-3">
                       {(e.screenshots?.length ? e.screenshots : [{ id: `${e.id}-legacy`, src: e.screenshotDataUrl!, timeframe: e.timeframe }]).map((shot, idx) => (
                         <div
                           key={shot.id}
                           className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950/30"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={shot.src} alt="capture" className="h-40 w-full object-cover" />
+                          <img 
+                            src={shot.src} 
+                            alt="capture" 
+                            className="w-full object-contain max-h-[500px] cursor-pointer hover:opacity-95 transition"
+                            onClick={() => window.open(shot.src, '_blank')}
+                          />
 
                           {/* Timeframe tag */}
-                          <div className="absolute left-2 top-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-semibold text-slate-100">
+                          <div className="absolute left-2 top-2 rounded-md bg-black/70 px-2.5 py-1.5 text-xs font-semibold text-slate-100 backdrop-blur-sm">
                             ⏱ {shot.timeframe}
                           </div>
 
                           {/* Delete photo */}
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(ev) => {
+                              ev.stopPropagation()
                               onUpdate(e.id, (prev) => {
                                 const list = prev.screenshots?.length
                                   ? prev.screenshots.filter((s) => s.id !== shot.id)
@@ -674,7 +680,7 @@ function DayDrawer({
                                 return next
                               })
                             }}
-                            className="absolute right-2 top-2 rounded-full bg-red-500/90 p-1 text-white hover:bg-red-500"
+                            className="absolute right-2 top-2 rounded-full bg-red-500/90 p-1.5 text-white hover:bg-red-500"
                             aria-label="Supprimer"
                           >
                             <Trash2 className="h-4 w-4" />
