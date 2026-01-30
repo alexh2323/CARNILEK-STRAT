@@ -424,24 +424,24 @@ function DayDrawer({
 
   return (
     <>
-      <div className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed right-0 top-0 z-[101] h-full w-full max-w-xl bg-slate-950 text-slate-100 shadow-2xl border-l border-slate-800">
-        <div className="flex items-center justify-between border-b px-6 py-4">
+      <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[101] bg-slate-950 text-slate-100">
+        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Jour</p>
-            <p className="text-lg font-semibold text-slate-100">{titleDate}</p>
+            <p className="text-xl font-semibold text-slate-100">{titleDate}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full bg-slate-900/60 p-2 text-slate-200 hover:bg-slate-900 ring-1 ring-slate-800"
+            className="rounded-full bg-slate-800 p-2.5 text-slate-200 hover:bg-slate-700 transition"
             aria-label="Fermer"
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
-        <div className="h-[calc(100%-64px)] overflow-y-auto px-6 py-5">
+        <div className="h-[calc(100%-72px)] overflow-y-auto px-6 py-6">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-slate-300">{entries.length} entrées</p>
             <button
@@ -647,22 +647,23 @@ function DayDrawer({
                   </div>
 
                   {(e.screenshots?.length || e.screenshotDataUrl) && (
-                    <div className="mt-3 space-y-3">
+                    <div className="mt-4 space-y-4">
                       {(e.screenshots?.length ? e.screenshots : [{ id: `${e.id}-legacy`, src: e.screenshotDataUrl!, timeframe: e.timeframe }]).map((shot, idx) => (
                         <div
                           key={shot.id}
-                          className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950/30"
+                          className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img 
                             src={shot.src} 
                             alt="capture" 
-                            className="w-full object-contain max-h-[500px] cursor-pointer hover:opacity-95 transition"
+                            className="w-full object-contain cursor-pointer hover:opacity-95 transition"
+                            style={{ maxHeight: 'calc(100vh - 250px)' }}
                             onClick={() => window.open(shot.src, '_blank')}
                           />
 
                           {/* Timeframe tag */}
-                          <div className="absolute left-2 top-2 rounded-md bg-black/70 px-2.5 py-1.5 text-xs font-semibold text-slate-100 backdrop-blur-sm">
+                          <div className="absolute left-3 top-3 rounded-lg bg-black/70 px-3 py-2 text-sm font-semibold text-slate-100 backdrop-blur-sm">
                             ⏱ {shot.timeframe}
                           </div>
 
@@ -680,10 +681,10 @@ function DayDrawer({
                                 return next
                               })
                             }}
-                            className="absolute right-2 top-2 rounded-full bg-red-500/90 p-1.5 text-white hover:bg-red-500"
+                            className="absolute right-3 top-3 rounded-full bg-red-500/90 p-2 text-white hover:bg-red-500 transition"
                             aria-label="Supprimer"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-5 w-5" />
                           </button>
                         </div>
                       ))}
