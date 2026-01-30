@@ -1,7 +1,12 @@
-import { ALLOWED_TIMEFRAMES, type MarkupEntry } from "./types"
-import { supabase } from "@/lib/supabase/client"
+import { type MarkupEntry } from "./types"
 
 const LOCAL_STORAGE_KEY = "trading:markups:v1"
+
+// Import dynamique pour éviter les erreurs au build
+async function getSupabaseClient() {
+  const { getSupabase } = await import("@/lib/supabase/client")
+  return getSupabase()
+}
 
 // Convertir depuis le format Supabase vers MarkupEntry
 function fromSupabase(row: any): MarkupEntry {
@@ -39,6 +44,7 @@ export async function migrateLocalStorageToSupabase(): Promise<void> {
   if (!raw) return
   
   try {
+    const supabase = await getSupabaseClient()
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed) || parsed.length === 0) return
     
@@ -77,6 +83,7 @@ export async function migrateLocalStorageToSupabase(): Promise<void> {
 // Charger les markups depuis Supabase
 export async function loadMarkupsFromStorage(): Promise<MarkupEntry[]> {
   try {
+    const supabase = await getSupabaseClient()
     const { data, error } = await supabase
       .from('markups')
       .select('*')
@@ -97,6 +104,7 @@ export async function loadMarkupsFromStorage(): Promise<MarkupEntry[]> {
 // Ajouter un markup
 export async function addMarkupToStorage(entry: MarkupEntry): Promise<boolean> {
   try {
+    const supabase = await getSupabaseClient()
     const { error } = await supabase
       .from('markups')
       .insert(toSupabase(entry))
@@ -115,6 +123,7 @@ export async function addMarkupToStorage(entry: MarkupEntry): Promise<boolean> {
 // Mettre à jour un markup
 export async function updateMarkupInStorage(entry: MarkupEntry): Promise<boolean> {
   try {
+    const supabase = await getSupabaseClient()
     const { error } = await supabase
       .from('markups')
       .update(toSupabase(entry))
@@ -134,6 +143,7 @@ export async function updateMarkupInStorage(entry: MarkupEntry): Promise<boolean
 // Supprimer un markup
 export async function deleteMarkupFromStorage(id: string): Promise<boolean> {
   try {
+    const supabase = await getSupabaseClient()
     const { error } = await supabase
       .from('markups')
       .delete()
@@ -150,9 +160,7 @@ export async function deleteMarkupFromStorage(id: string): Promise<boolean> {
   }
 }
 
-// Sauvegarder tous les markups (remplace tout)
+// Sauvegarder tous les markups (remplace tout) - deprecated
 export async function saveMarkupsToStorage(entries: MarkupEntry[]): Promise<void> {
-  // Cette fonction n'est plus utilisée directement
-  // On utilise addMarkupToStorage, updateMarkupInStorage, deleteMarkupFromStorage
   console.warn('saveMarkupsToStorage is deprecated, use individual CRUD operations instead')
 }
