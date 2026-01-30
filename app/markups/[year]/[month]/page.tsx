@@ -21,6 +21,8 @@ import { countByHour, getEntryDay, getEntryMonth, getEntryYear, timeframeDistrib
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledBars } from "@/components/ui/labeled-bars"
 import { fileToCompressedDataUrl } from "@/lib/images/toDataUrl"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts"
 
 const DAYS_FR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
 const MONTHS_FR = [
@@ -134,6 +136,45 @@ export default function MarkupsMonthPage() {
     const totalBEPartials = beByPartial.TP1 + beByPartial.TP2
     const totalSLPartials = slByPartial.TP1 + slByPartial.TP2
     return { ...stats, total, wins, winRate, beByPartial, totalBEPartials, slByPartial, totalSLPartials }
+  }, [monthEntries])
+
+  // Évolution du win rate jour par jour (cumulatif)
+  const winRateEvolution = useMemo(() => {
+    // Trier les entrées par date
+    const sorted = [...monthEntries].sort((a, b) => a.datetimeLocal.localeCompare(b.datetimeLocal))
+    
+    const data: Array<{ day: string; winRate: number; trades: number }> = []
+    let cumulWins = 0
+    let cumulTotal = 0
+    
+    // Grouper par jour
+    const byDay = new Map<string, typeof sorted>()
+    for (const e of sorted) {
+      const day = e.datetimeLocal.split("T")[0]
+      const list = byDay.get(day) || []
+      list.push(e)
+      byDay.set(day, list)
+    }
+    
+    // Calculer le win rate cumulatif pour chaque jour
+    for (const [day, entries] of byDay) {
+      for (const e of entries) {
+        if (e.tradeResult === "TP1" || e.tradeResult === "TP2" || e.tradeResult === "TP3") {
+          cumulWins++
+        }
+        if (e.tradeResult) {
+          cumulTotal++
+        }
+      }
+      const dayNum = parseInt(day.split("-")[2])
+      data.push({
+        day: `${dayNum}`,
+        winRate: cumulTotal > 0 ? Math.round((cumulWins / cumulTotal) * 100) : 0,
+        trades: cumulTotal,
+      })
+    }
+    
+    return data
   }, [monthEntries])
 
   const weekGainsPct = useMemo(() => {
@@ -336,6 +377,65 @@ export default function MarkupsMonthPage() {
             </div>
           </div>
         </section>
+
+        {/* Évolution du win rate */}
+        {winRateEvolution.length > 0 && (
+          <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-100">Évolution du Win Rate</h2>
+              <p className="text-sm text-slate-400">Progression cumulée au fil des trades</p>
+            </div>
+            <ChartContainer
+              config={{
+                winRate: {
+                  label: "Win Rate",
+                  color: "#22c55e",
+                },
+              }}
+              className="h-[200px] w-full"
+            >
+              <LineChart data={winRateEvolution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis 
+                  dataKey="day" 
+                  stroke="#94a3b8" 
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  stroke="#94a3b8" 
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  domain={[0, 100]}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      className="bg-slate-900 border-slate-700"
+                      labelFormatter={(value) => `Jour ${value}`}
+                      formatter={(value, name, item) => (
+                        <span className="text-slate-100">
+                          {value}% ({item.payload.trades} trades)
+                        </span>
+                      )}
+                    />
+                  }
+                />
+                <Line
+                  type="monotone"
+                  dataKey="winRate"
+                  stroke="#22c55e"
+                  strokeWidth={2}
+                  dot={{ fill: "#22c55e", strokeWidth: 0, r: 4 }}
+                  activeDot={{ r: 6, fill: "#22c55e" }}
+                />
+              </LineChart>
+            </ChartContainer>
+          </section>
+        )}
 
         {/* Heures (distribution) - pleine largeur, en dessous */}
         <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
