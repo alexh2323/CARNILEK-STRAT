@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useMarkups } from "@/components/markups/useMarkups"
-import { ALLOWED_TIMEFRAMES, ALLOWED_CHARACTERISTICS, CHARACTERISTIC_LABELS, type MarkupEntry, type Screenshot, type Timeframe, type Characteristic } from "@/lib/markups/types"
+import { ALLOWED_TIMEFRAMES, ALLOWED_CHARACTERISTICS, CHARACTERISTIC_LABELS, ALLOWED_TRADE_RESULTS, TRADE_RESULT_LABELS, TRADE_RESULT_COLORS, type MarkupEntry, type Screenshot, type Timeframe, type Characteristic, type TradeResult } from "@/lib/markups/types"
 import { countByHour, getEntryDay, getEntryMonth, getEntryYear, timeframeDistribution } from "@/lib/markups/metrics"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { LabeledBars } from "@/components/ui/labeled-bars"
@@ -351,6 +351,11 @@ function DayDrawer({
     symbol: string
     timeframe: Timeframe
     characteristics: Characteristic[]
+    tradeResult: TradeResult | ""
+    pips: string
+    pipsTP1: string
+    pipsTP2: string
+    pipsTP3: string
     notes: string
     screenshots: Screenshot[]
   }>({
@@ -358,6 +363,11 @@ function DayDrawer({
     symbol: "MSU",
     timeframe: "M15",
     characteristics: [],
+    tradeResult: "",
+    pips: "",
+    pipsTP1: "",
+    pipsTP2: "",
+    pipsTP3: "",
     notes: "",
     screenshots: [],
   })
@@ -376,6 +386,11 @@ function DayDrawer({
       symbol: "MSU",
       timeframe: "M15",
       characteristics: [],
+      tradeResult: "",
+      pips: "",
+      pipsTP1: "",
+      pipsTP2: "",
+      pipsTP3: "",
       notes: "",
       screenshots: [],
     })
@@ -389,6 +404,11 @@ function DayDrawer({
       symbol: entry.symbol,
       timeframe: entry.timeframe as Timeframe,
       characteristics: entry.characteristics || [],
+      tradeResult: entry.tradeResult || "",
+      pips: entry.pips?.toString() || "",
+      pipsTP1: entry.pipsTP1?.toString() || "",
+      pipsTP2: entry.pipsTP2?.toString() || "",
+      pipsTP3: entry.pipsTP3?.toString() || "",
       notes: entry.notes || "",
       screenshots: entry.screenshots || [],
     })
@@ -404,6 +424,11 @@ function DayDrawer({
       symbol: "MSU",
       timeframe: "M15",
       characteristics: [],
+      tradeResult: "",
+      pips: "",
+      pipsTP1: "",
+      pipsTP2: "",
+      pipsTP3: "",
       notes: "",
       screenshots: [],
     })
@@ -432,6 +457,11 @@ function DayDrawer({
     const symbol = form.symbol.trim().toUpperCase()
     if (!symbol) return
 
+    const pipsNum = form.pips ? parseFloat(form.pips) : undefined
+    const pipsTP1Num = form.pipsTP1 ? parseFloat(form.pipsTP1) : undefined
+    const pipsTP2Num = form.pipsTP2 ? parseFloat(form.pipsTP2) : undefined
+    const pipsTP3Num = form.pipsTP3 ? parseFloat(form.pipsTP3) : undefined
+
     if (editingId) {
       // Mode édition : mettre à jour l'entrée existante
       onUpdate(editingId, (prev) => ({
@@ -440,6 +470,11 @@ function DayDrawer({
         symbol,
         timeframe: form.timeframe,
         characteristics: form.characteristics.length ? form.characteristics : undefined,
+        tradeResult: form.tradeResult || undefined,
+        pips: pipsNum,
+        pipsTP1: pipsTP1Num,
+        pipsTP2: pipsTP2Num,
+        pipsTP3: pipsTP3Num,
         notes: form.notes.trim() || undefined,
         screenshots: form.screenshots.length ? form.screenshots : undefined,
         screenshotDataUrl: form.screenshots[0]?.src || undefined,
@@ -455,6 +490,11 @@ function DayDrawer({
         timeframe: form.timeframe,
         strategy: "",
         characteristics: form.characteristics.length ? form.characteristics : undefined,
+        tradeResult: form.tradeResult || undefined,
+        pips: pipsNum,
+        pipsTP1: pipsTP1Num,
+        pipsTP2: pipsTP2Num,
+        pipsTP3: pipsTP3Num,
         notes: form.notes.trim() || undefined,
         screenshots: form.screenshots.length ? form.screenshots : undefined,
         screenshotDataUrl: form.screenshots[0]?.src || undefined,
@@ -466,6 +506,11 @@ function DayDrawer({
       symbol: "MSU",
       timeframe: "M15",
       characteristics: [],
+      tradeResult: "",
+      pips: "",
+      pipsTP1: "",
+      pipsTP2: "",
+      pipsTP3: "",
       notes: "",
       screenshots: [],
     })
@@ -594,6 +639,78 @@ function DayDrawer({
                   </select>
                 </label>
 
+              </div>
+
+              {/* Résultat du trade */}
+              <div className="mt-4">
+                <span className="text-sm font-medium text-slate-200">Résultat</span>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {ALLOWED_TRADE_RESULTS.map((result) => (
+                    <button
+                      key={result}
+                      type="button"
+                      onClick={() => setForm((p) => ({ ...p, tradeResult: p.tradeResult === result ? "" : result }))}
+                      className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                        form.tradeResult === result
+                          ? TRADE_RESULT_COLORS[result]
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                      }`}
+                    >
+                      {TRADE_RESULT_LABELS[result]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pips */}
+              <div className="mt-4 space-y-3">
+                <label className="block text-sm font-medium text-slate-200">
+                  Pips total
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={form.pips}
+                    onChange={(e) => setForm((p) => ({ ...p, pips: e.target.value }))}
+                    placeholder="ex: 78"
+                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                  />
+                </label>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="block text-sm font-medium text-slate-200">
+                    Pips TP1
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={form.pipsTP1}
+                      onChange={(e) => setForm((p) => ({ ...p, pipsTP1: e.target.value }))}
+                      placeholder="57"
+                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Pips TP2
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={form.pipsTP2}
+                      onChange={(e) => setForm((p) => ({ ...p, pipsTP2: e.target.value }))}
+                      placeholder="28"
+                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-200">
+                    Pips TP3
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={form.pipsTP3}
+                      onChange={(e) => setForm((p) => ({ ...p, pipsTP3: e.target.value }))}
+                      placeholder="15"
+                      className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                    />
+                  </label>
+                </div>
               </div>
 
               <label className="mt-3 block text-sm font-medium text-slate-200">
@@ -751,6 +868,31 @@ function DayDrawer({
                             </span>
                           ))}
                         </div>
+                      )}
+                      {/* Résultat et Pips */}
+                      {(e.tradeResult || e.pips !== undefined) && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {e.tradeResult && (
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${TRADE_RESULT_COLORS[e.tradeResult]}`}>
+                              {TRADE_RESULT_LABELS[e.tradeResult]}
+                            </span>
+                          )}
+                          {e.pips !== undefined && (
+                            <span className="text-sm font-bold text-slate-100">
+                              {e.pips} pips
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {/* Détail des partiels */}
+                      {(e.pipsTP1 !== undefined || e.pipsTP2 !== undefined || e.pipsTP3 !== undefined) && (
+                        <p className="mt-1 text-xs text-slate-400">
+                          {[
+                            e.pipsTP1 !== undefined && `TP1: ${e.pipsTP1}`,
+                            e.pipsTP2 !== undefined && `TP2: ${e.pipsTP2}`,
+                            e.pipsTP3 !== undefined && `TP3: ${e.pipsTP3}`,
+                          ].filter(Boolean).join(" • ")}
+                        </p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">

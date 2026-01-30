@@ -16,6 +16,26 @@ export const CHARACTERISTIC_LABELS: Record<Characteristic, string> = {
   prise_buildup: "Prise de build up",
 }
 
+export const ALLOWED_TRADE_RESULTS = ["TP1", "TP2", "TP3", "SL", "BE"] as const
+
+export type TradeResult = (typeof ALLOWED_TRADE_RESULTS)[number]
+
+export const TRADE_RESULT_LABELS: Record<TradeResult, string> = {
+  TP1: "TP 1",
+  TP2: "TP 2",
+  TP3: "TP 3",
+  SL: "Stop Loss",
+  BE: "Break Even",
+}
+
+export const TRADE_RESULT_COLORS: Record<TradeResult, string> = {
+  TP1: "bg-green-900/40 text-green-300 ring-green-800/50",
+  TP2: "bg-green-900/60 text-green-200 ring-green-700/50",
+  TP3: "bg-emerald-900/60 text-emerald-200 ring-emerald-700/50",
+  SL: "bg-red-900/40 text-red-300 ring-red-800/50",
+  BE: "bg-yellow-900/40 text-yellow-300 ring-yellow-800/50",
+}
+
 export type Screenshot = {
   id: string
   src: string
@@ -36,6 +56,16 @@ export type MarkupEntry = {
   strategy: string
   /** Caractéristiques du trade */
   characteristics?: Characteristic[]
+  /** Résultat du trade: TP1, TP2, TP3, SL ou BE */
+  tradeResult?: TradeResult
+  /** Nombre total de pips */
+  pips?: number
+  /** Pips du partiel 1 (TP1) */
+  pipsTP1?: number
+  /** Pips du partiel 2 (TP2) */
+  pipsTP2?: number
+  /** Pips du partiel 3 (TP3) */
+  pipsTP3?: number
   /** Notes libres */
   notes?: string
   /**
