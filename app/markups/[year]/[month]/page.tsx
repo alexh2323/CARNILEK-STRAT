@@ -110,6 +110,20 @@ export default function MarkupsMonthPage() {
   const hours = useMemo(() => countByHour(monthEntries), [monthEntries])
   const maxHour = Math.max(1, ...hours)
 
+  // Stats des résultats du mois
+  const resultStats = useMemo(() => {
+    const stats = { TP1: 0, TP2: 0, TP3: 0, BE: 0, SL: 0 }
+    for (const e of monthEntries) {
+      if (e.tradeResult && e.tradeResult in stats) {
+        stats[e.tradeResult as keyof typeof stats]++
+      }
+    }
+    const total = stats.TP1 + stats.TP2 + stats.TP3 + stats.BE + stats.SL
+    const wins = stats.TP1 + stats.TP2 + stats.TP3
+    const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
+    return { ...stats, total, wins, winRate }
+  }, [monthEntries])
+
   const weekGainsPct = useMemo(() => {
     // fictif: gains % par semaine (W1..Wn) basé sur le nombre de semaines affichées
     const arr: Array<{ label: string; pct: number }> = []
@@ -270,6 +284,44 @@ export default function MarkupsMonthPage() {
             </section>
           </aside>
         </div>
+
+        {/* Stats des résultats du mois */}
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-slate-100">📊 Résultats du mois</h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-3">
+              <span className="rounded-lg bg-green-900/40 px-3 py-1.5 text-sm font-semibold text-green-300">
+                TP1: {resultStats.TP1}
+              </span>
+              <span className="rounded-lg bg-green-900/60 px-3 py-1.5 text-sm font-semibold text-green-200">
+                TP2: {resultStats.TP2}
+              </span>
+              <span className="rounded-lg bg-emerald-900/60 px-3 py-1.5 text-sm font-semibold text-emerald-200">
+                TP3: {resultStats.TP3}
+              </span>
+              <span className="rounded-lg bg-yellow-900/40 px-3 py-1.5 text-sm font-semibold text-yellow-300">
+                BE: {resultStats.BE}
+              </span>
+              <span className="rounded-lg bg-red-900/40 px-3 py-1.5 text-sm font-semibold text-red-300">
+                SL: {resultStats.SL}
+              </span>
+            </div>
+            <div className="ml-auto flex items-center gap-3 text-sm">
+              <span className="text-slate-400">
+                {resultStats.wins}/{resultStats.total} trades gagnants
+              </span>
+              <span className={`rounded-lg px-3 py-1.5 font-bold ${
+                resultStats.winRate >= 50 
+                  ? "bg-green-900/40 text-green-300" 
+                  : "bg-red-900/40 text-red-300"
+              }`}>
+                Win rate: {resultStats.winRate}%
+              </span>
+            </div>
+          </div>
+        </section>
 
         {/* Heures (distribution) - pleine largeur, en dessous */}
         <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
