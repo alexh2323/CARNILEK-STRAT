@@ -113,8 +113,9 @@ export default function MarkupsMonthPage() {
   // Stats des résultats du mois
   const resultStats = useMemo(() => {
     const stats = { TP1: 0, TP2: 0, TP3: 0, BE: 0, SL: 0 }
-    // Compteur BE par niveau de partiel
+    // Compteur BE et SL par niveau de partiel
     const beByPartial = { TP1: 0, TP2: 0 }
+    const slByPartial = { TP1: 0, TP2: 0 }
     
     for (const e of monthEntries) {
       if (e.tradeResult && e.tradeResult in stats) {
@@ -123,12 +124,16 @@ export default function MarkupsMonthPage() {
       // Compter les BE par partiel
       if (e.resultTP1 === "BE") beByPartial.TP1++
       if (e.resultTP2 === "BE") beByPartial.TP2++
+      // Compter les SL par partiel
+      if (e.resultTP1 === "SL") slByPartial.TP1++
+      if (e.resultTP2 === "SL") slByPartial.TP2++
     }
     const total = stats.TP1 + stats.TP2 + stats.TP3 + stats.BE + stats.SL
     const wins = stats.TP1 + stats.TP2 + stats.TP3
     const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
     const totalBEPartials = beByPartial.TP1 + beByPartial.TP2
-    return { ...stats, total, wins, winRate, beByPartial, totalBEPartials }
+    const totalSLPartials = slByPartial.TP1 + slByPartial.TP2
+    return { ...stats, total, wins, winRate, beByPartial, totalBEPartials, slByPartial, totalSLPartials }
   }, [monthEntries])
 
   const weekGainsPct = useMemo(() => {
@@ -314,6 +319,7 @@ export default function MarkupsMonthPage() {
               </span>
               <span className="rounded-lg bg-red-900/40 px-3 py-1.5 text-sm font-semibold text-red-300">
                 SL: {resultStats.SL} <span className="text-red-400/70">({resultStats.total > 0 ? Math.round((resultStats.SL / resultStats.total) * 100) : 0}%)</span>
+                <span className="ml-2 text-[10px] text-red-400/60">[TP1: {resultStats.slByPartial.TP1} • TP2: {resultStats.slByPartial.TP2}]</span>
               </span>
             </div>
             <div className="ml-auto flex items-center gap-3 text-sm">
