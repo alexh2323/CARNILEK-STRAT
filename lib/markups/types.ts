@@ -85,6 +85,8 @@ export type MarkupEntry = {
   resultTP3?: PartialResult
   /** Pips du Stop Loss */
   pipsSL?: number
+  /** % du capital (ex: 2.5 pour +2.5%, -1 pour -1%) */
+  capitalPct?: number
   /** Notes libres */
   notes?: string
   /**

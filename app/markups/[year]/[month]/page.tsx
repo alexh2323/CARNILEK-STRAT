@@ -138,14 +138,15 @@ export default function MarkupsMonthPage() {
     return { ...stats, total, wins, winRate, beByPartial, totalBEPartials, slByPartial, totalSLPartials }
   }, [monthEntries])
 
-  // Évolution du win rate jour par jour (cumulatif)
-  const winRateEvolution = useMemo(() => {
+  // Évolution du capital jour par jour (cumulatif)
+  const capitalEvolution = useMemo(() => {
     // Trier les entrées par date
     const sorted = [...monthEntries].sort((a, b) => a.datetimeLocal.localeCompare(b.datetimeLocal))
     
-    const data: Array<{ day: string; winRate: number; trades: number }> = []
-    let cumulWins = 0
-    let cumulTotal = 0
+    const data: Array<{ day: string; capital: number; pct: number; trades: number }> = []
+    let currentCapital = startingCapital
+    let cumulPct = 0
+    let tradeCount = 0
     
     // Grouper par jour
     const byDay = new Map<string, typeof sorted>()
@@ -156,26 +157,26 @@ export default function MarkupsMonthPage() {
       byDay.set(day, list)
     }
     
-    // Calculer le win rate cumulatif pour chaque jour
+    // Calculer le capital cumulatif pour chaque jour
     for (const [day, entries] of byDay) {
       for (const e of entries) {
-        if (e.tradeResult === "TP1" || e.tradeResult === "TP2" || e.tradeResult === "TP3") {
-          cumulWins++
-        }
-        if (e.tradeResult) {
-          cumulTotal++
+        if (e.capitalPct !== undefined) {
+          cumulPct += e.capitalPct
+          currentCapital = startingCapital * (1 + cumulPct / 100)
+          tradeCount++
         }
       }
       const dayNum = parseInt(day.split("-")[2])
       data.push({
         day: `${dayNum}`,
-        winRate: cumulTotal > 0 ? Math.round((cumulWins / cumulTotal) * 100) : 0,
-        trades: cumulTotal,
+        capital: Math.round(currentCapital),
+        pct: Math.round(cumulPct * 10) / 10,
+        trades: tradeCount,
       })
     }
     
     return data
-  }, [monthEntries])
+  }, [monthEntries, startingCapital])
 
   const weekGainsPct = useMemo(() => {
     // fictif: gains % par semaine (W1..Wn) basé sur le nombre de semaines affichées
@@ -188,6 +189,10 @@ export default function MarkupsMonthPage() {
     }
     return arr
   }, [weeks.length, year, month])
+
+  // Capital initial du mois (modifiable)
+  const [startingCapital, setStartingCapital] = useState<number>(200000)
+  const [editingCapital, setEditingCapital] = useState(false)
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const selectedList = selectedDay ? entriesByDay.get(selectedDay) ?? [] : []
@@ -378,23 +383,46 @@ export default function MarkupsMonthPage() {
           </div>
         </section>
 
-        {/* Évolution du win rate */}
-        {winRateEvolution.length > 0 && (
-          <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-slate-100">Évolution du Win Rate</h2>
+        {/* Évolution du capital */}
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-100">Évolution du Capital</h2>
               <p className="text-sm text-slate-400">Progression cumulée au fil des trades</p>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-400">Capital initial:</span>
+              {editingCapital ? (
+                <input
+                  type="number"
+                  value={startingCapital}
+                  onChange={(e) => setStartingCapital(Number(e.target.value))}
+                  onBlur={() => setEditingCapital(false)}
+                  onKeyDown={(e) => e.key === "Enter" && setEditingCapital(false)}
+                  autoFocus
+                  className="w-32 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100"
+                />
+              ) : (
+                <button
+                  onClick={() => setEditingCapital(true)}
+                  className="rounded-lg bg-slate-800 px-3 py-1 text-sm font-medium text-slate-100 hover:bg-slate-700"
+                >
+                  {startingCapital.toLocaleString()}€
+                </button>
+              )}
+            </div>
+          </div>
+          {capitalEvolution.length > 0 ? (
             <ChartContainer
               config={{
-                winRate: {
-                  label: "Win Rate",
+                capital: {
+                  label: "Capital",
                   color: "#22c55e",
                 },
               }}
               className="h-[200px] w-full"
             >
-              <LineChart data={winRateEvolution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <LineChart data={capitalEvolution} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis 
                   dataKey="day" 
@@ -408,8 +436,7 @@ export default function MarkupsMonthPage() {
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  domain={[0, 100]}
-                  tickFormatter={(value) => `${value}%`}
+                  tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                 />
                 <ChartTooltip
                   content={
@@ -418,7 +445,7 @@ export default function MarkupsMonthPage() {
                       labelFormatter={(value) => `Jour ${value}`}
                       formatter={(value, name, item) => (
                         <span className="text-slate-100">
-                          {value}% ({item.payload.trades} trades)
+                          {Number(value).toLocaleString()}€ ({item.payload.pct > 0 ? "+" : ""}{item.payload.pct}%)
                         </span>
                       )}
                     />
@@ -426,16 +453,20 @@ export default function MarkupsMonthPage() {
                 />
                 <Line
                   type="monotone"
-                  dataKey="winRate"
-                  stroke="#22c55e"
+                  dataKey="capital"
+                  stroke={capitalEvolution[capitalEvolution.length - 1]?.pct >= 0 ? "#22c55e" : "#ef4444"}
                   strokeWidth={2}
-                  dot={{ fill: "#22c55e", strokeWidth: 0, r: 4 }}
-                  activeDot={{ r: 6, fill: "#22c55e" }}
+                  dot={{ fill: capitalEvolution[capitalEvolution.length - 1]?.pct >= 0 ? "#22c55e" : "#ef4444", strokeWidth: 0, r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ChartContainer>
-          </section>
-        )}
+          ) : (
+            <div className="flex h-[200px] items-center justify-center text-slate-500">
+              Ajoute des trades avec le % capital pour voir l&apos;évolution
+            </div>
+          )}
+        </section>
 
         {/* Heures (distribution) - pleine largeur, en dessous */}
         <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
@@ -526,6 +557,7 @@ function DayDrawer({
     pipsTP3: string
     resultTP3: PartialResult | ""
     pipsSL: string
+    capitalPct: string
     notes: string
     screenshots: Screenshot[]
   }>({
@@ -542,6 +574,7 @@ function DayDrawer({
     pipsTP3: "",
     resultTP3: "",
     pipsSL: "",
+    capitalPct: "",
     notes: "",
     screenshots: [],
   })
@@ -569,6 +602,7 @@ function DayDrawer({
       pipsTP3: "",
       resultTP3: "",
       pipsSL: "",
+      capitalPct: "",
       notes: "",
       screenshots: [],
     })
@@ -591,6 +625,7 @@ function DayDrawer({
       pipsTP3: entry.pipsTP3?.toString() || "",
       resultTP3: entry.resultTP3 || "",
       pipsSL: entry.pipsSL?.toString() || "",
+      capitalPct: entry.capitalPct?.toString() || "",
       notes: entry.notes || "",
       screenshots: entry.screenshots || [],
     })
@@ -615,6 +650,7 @@ function DayDrawer({
       pipsTP3: "",
       resultTP3: "",
       pipsSL: "",
+      capitalPct: "",
       notes: "",
       screenshots: [],
     })
@@ -648,6 +684,7 @@ function DayDrawer({
     const pipsTP2Num = form.pipsTP2 ? parseFloat(form.pipsTP2) : undefined
     const pipsTP3Num = form.pipsTP3 ? parseFloat(form.pipsTP3) : undefined
     const pipsSLNum = form.pipsSL ? parseFloat(form.pipsSL) : undefined
+    const capitalPctNum = form.capitalPct ? parseFloat(form.capitalPct) : undefined
 
     if (editingId) {
       // Mode édition : mettre à jour l'entrée existante
@@ -666,6 +703,7 @@ function DayDrawer({
         pipsTP3: pipsTP3Num,
         resultTP3: form.resultTP3 || undefined,
         pipsSL: pipsSLNum,
+        capitalPct: capitalPctNum,
         notes: form.notes.trim() || undefined,
         screenshots: form.screenshots.length ? form.screenshots : undefined,
         screenshotDataUrl: form.screenshots[0]?.src || undefined,
@@ -690,6 +728,7 @@ function DayDrawer({
         pipsTP3: pipsTP3Num,
         resultTP3: form.resultTP3 || undefined,
         pipsSL: pipsSLNum,
+        capitalPct: capitalPctNum,
         notes: form.notes.trim() || undefined,
         screenshots: form.screenshots.length ? form.screenshots : undefined,
         screenshotDataUrl: form.screenshots[0]?.src || undefined,
@@ -710,6 +749,7 @@ function DayDrawer({
       pipsTP3: "",
       resultTP3: "",
       pipsSL: "",
+      capitalPct: "",
       notes: "",
       screenshots: [],
     })
@@ -979,6 +1019,25 @@ function DayDrawer({
                 </div>
               </div>
 
+              {/* % Capital */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-slate-200">
+                  % Capital
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={form.capitalPct}
+                      onChange={(e) => setForm((p) => ({ ...p, capitalPct: e.target.value }))}
+                      placeholder="ex: 2.5 ou -1"
+                      className="w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                    />
+                    <span className="text-slate-400">%</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">Positif = gain, Négatif = perte</p>
+                </label>
+              </div>
+
               <label className="mt-3 block text-sm font-medium text-slate-200">
                 Notes
                 <textarea
@@ -1136,7 +1195,7 @@ function DayDrawer({
                         </div>
                       )}
                       {/* Résultat et Pips */}
-                      {(e.tradeResult || e.pips !== undefined) && (
+                      {(e.tradeResult || e.pips !== undefined || e.capitalPct !== undefined) && (
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           {e.tradeResult && (
                             <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${TRADE_RESULT_COLORS[e.tradeResult]}`}>
@@ -1146,6 +1205,11 @@ function DayDrawer({
                           {e.pips !== undefined && (
                             <span className="text-sm font-bold text-slate-100">
                               {e.pips} pips
+                            </span>
+                          )}
+                          {e.capitalPct !== undefined && (
+                            <span className={`text-sm font-bold ${e.capitalPct >= 0 ? "text-green-400" : "text-red-400"}`}>
+                              {e.capitalPct > 0 ? "+" : ""}{e.capitalPct}%
                             </span>
                           )}
                         </div>
