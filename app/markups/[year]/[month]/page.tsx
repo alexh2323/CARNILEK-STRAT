@@ -182,6 +182,7 @@ export default function MarkupsMonthPage() {
 
   // Sélection de semaine (null = tout le mois)
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null)
+  const [showWeekDropdown, setShowWeekDropdown] = useState(false)
 
   // Entrées filtrées par semaine si sélectionnée
   const filteredEntries = useMemo(() => {
@@ -519,8 +520,48 @@ export default function MarkupsMonthPage() {
                 </span>
               )}
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5">
-              <span className="text-sm text-slate-300">{MONTHS_FR[month - 1]} {year}</span>
+            <div className="relative">
+              <button
+                onClick={() => setShowWeekDropdown(!showWeekDropdown)}
+                className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 hover:bg-slate-800 transition"
+              >
+                <span className="text-sm text-slate-300">
+                  {selectedWeek !== null ? `W${selectedWeek + 1}` : MONTHS_FR[month - 1]} {year}
+                </span>
+                <ChevronRight className={`h-4 w-4 text-slate-400 transition-transform ${showWeekDropdown ? "rotate-90" : ""}`} />
+              </button>
+              
+              {showWeekDropdown && (
+                <div className="absolute right-0 top-full mt-2 z-50 min-w-[200px] rounded-xl border border-slate-700 bg-slate-900 p-2 shadow-xl">
+                  <button
+                    onClick={() => { setSelectedWeek(null); setShowWeekDropdown(false); }}
+                    className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
+                      selectedWeek === null ? "bg-slate-100 text-slate-900" : "text-slate-300 hover:bg-slate-800"
+                    }`}
+                  >
+                    <span>Tout le mois</span>
+                    <span className="text-xs opacity-70">
+                      {weeklyStats.reduce((sum, w) => sum + w.pct, 0).toFixed(1)}%
+                    </span>
+                  </button>
+                  {weeklyStats.map((week, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => { setSelectedWeek(idx); setShowWeekDropdown(false); }}
+                      className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
+                        selectedWeek === idx ? "bg-slate-100 text-slate-900" : "text-slate-300 hover:bg-slate-800"
+                      }`}
+                    >
+                      <span>{week.label}</span>
+                      <span className={`text-xs ${
+                        week.pct > 0 ? "text-green-400" : week.pct < 0 ? "text-red-400" : "text-slate-500"
+                      }`}>
+                        {week.trades > 0 ? `${week.pct > 0 ? "+" : ""}${week.pct}%` : "—"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
