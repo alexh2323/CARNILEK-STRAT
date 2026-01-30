@@ -6,6 +6,8 @@ export const ALLOWED_CHARACTERISTICS = [
   "sorti_lit_cycle",
   "sorti_buildup",
   "prise_buildup",
+  "msu_baissier",
+  "msu_haussier",
 ] as const
 
 export type Characteristic = (typeof ALLOWED_CHARACTERISTICS)[number]
@@ -14,6 +16,8 @@ export const CHARACTERISTIC_LABELS: Record<Characteristic, string> = {
   sorti_lit_cycle: "Sorti de lit cycle",
   sorti_buildup: "Sorti de buildup",
   prise_buildup: "Prise de build up",
+  msu_baissier: "MSU baissier",
+  msu_haussier: "MSU haussier",
 }
 
 export const ALLOWED_TRADE_RESULTS = ["TP1", "TP2", "TP3", "SL", "BE"] as const
