@@ -383,52 +383,40 @@ export default function MarkupsMonthPage() {
           </div>
         </section>
 
-        {/* Évolution du capital - Style Cashflow */}
+        {/* Évolution du capital */}
         <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-lg">
-          <div className="mb-6 flex items-start justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-100">Cashflow</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                1 {MONTHS_FR[month - 1]} - {new Date(year, month, 0).getDate()} {MONTHS_FR[month - 1]}, {year}
-              </p>
-              <div className="mt-3 flex items-center gap-3">
-                {editingCapital ? (
-                  <input
-                    type="number"
-                    value={startingCapital}
-                    onChange={(e) => setStartingCapital(Number(e.target.value))}
-                    onBlur={() => setEditingCapital(false)}
-                    onKeyDown={(e) => e.key === "Enter" && setEditingCapital(false)}
-                    autoFocus
-                    className="w-40 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-2xl font-bold text-slate-100"
-                  />
-                ) : (
-                  <button
-                    onClick={() => setEditingCapital(true)}
-                    className="text-4xl font-bold text-slate-100 hover:text-slate-200 transition"
-                  >
-                    {(capitalEvolution.length > 0 ? capitalEvolution[capitalEvolution.length - 1].capital : startingCapital).toLocaleString()}€
-                  </button>
-                )}
-                {capitalEvolution.length > 0 && (
-                  <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold ${
-                    capitalEvolution[capitalEvolution.length - 1]?.pct >= 0 
-                      ? "bg-green-500/20 text-green-400" 
-                      : "bg-red-500/20 text-red-400"
-                  }`}>
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d={capitalEvolution[capitalEvolution.length - 1]?.pct >= 0 
-                        ? "M2 12l5 5L22 2" 
-                        : "M2 2l20 20"} 
-                      />
-                    </svg>
-                    {capitalEvolution[capitalEvolution.length - 1]?.pct > 0 ? "+" : ""}
-                    {capitalEvolution[capitalEvolution.length - 1]?.pct || 0}%
-                  </span>
-                )}
-              </div>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {editingCapital ? (
+                <input
+                  type="number"
+                  value={startingCapital}
+                  onChange={(e) => setStartingCapital(Number(e.target.value))}
+                  onBlur={() => setEditingCapital(false)}
+                  onKeyDown={(e) => e.key === "Enter" && setEditingCapital(false)}
+                  autoFocus
+                  className="w-32 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-lg font-bold text-slate-100"
+                />
+              ) : (
+                <button
+                  onClick={() => setEditingCapital(true)}
+                  className="text-2xl font-bold text-slate-100 hover:text-slate-200 transition"
+                >
+                  {(capitalEvolution.length > 0 ? capitalEvolution[capitalEvolution.length - 1].capital : startingCapital).toLocaleString()}€
+                </button>
+              )}
+              {capitalEvolution.length > 0 && (
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold ${
+                  capitalEvolution[capitalEvolution.length - 1]?.pct >= 0 
+                    ? "bg-green-500/20 text-green-400" 
+                    : "bg-red-500/20 text-red-400"
+                }`}>
+                  {capitalEvolution[capitalEvolution.length - 1]?.pct > 0 ? "+" : ""}
+                  {capitalEvolution[capitalEvolution.length - 1]?.pct || 0}%
+                </span>
+              )}
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2">
+            <div className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5">
               <span className="text-sm text-slate-300">{MONTHS_FR[month - 1]} {year}</span>
             </div>
           </div>
