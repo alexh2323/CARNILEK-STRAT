@@ -66,6 +66,8 @@ export type MarkupEntry = {
   pipsTP2?: number
   /** Pips du partiel 3 (TP3) */
   pipsTP3?: number
+  /** Pips du Stop Loss */
+  pipsSL?: number
   /** Notes libres */
   notes?: string
   /**

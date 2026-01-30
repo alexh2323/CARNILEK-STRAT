@@ -356,6 +356,7 @@ function DayDrawer({
     pipsTP1: string
     pipsTP2: string
     pipsTP3: string
+    pipsSL: string
     notes: string
     screenshots: Screenshot[]
   }>({
@@ -368,6 +369,7 @@ function DayDrawer({
     pipsTP1: "",
     pipsTP2: "",
     pipsTP3: "",
+    pipsSL: "",
     notes: "",
     screenshots: [],
   })
@@ -391,6 +393,7 @@ function DayDrawer({
       pipsTP1: "",
       pipsTP2: "",
       pipsTP3: "",
+      pipsSL: "",
       notes: "",
       screenshots: [],
     })
@@ -409,6 +412,7 @@ function DayDrawer({
       pipsTP1: entry.pipsTP1?.toString() || "",
       pipsTP2: entry.pipsTP2?.toString() || "",
       pipsTP3: entry.pipsTP3?.toString() || "",
+      pipsSL: entry.pipsSL?.toString() || "",
       notes: entry.notes || "",
       screenshots: entry.screenshots || [],
     })
@@ -429,6 +433,7 @@ function DayDrawer({
       pipsTP1: "",
       pipsTP2: "",
       pipsTP3: "",
+      pipsSL: "",
       notes: "",
       screenshots: [],
     })
@@ -461,6 +466,7 @@ function DayDrawer({
     const pipsTP1Num = form.pipsTP1 ? parseFloat(form.pipsTP1) : undefined
     const pipsTP2Num = form.pipsTP2 ? parseFloat(form.pipsTP2) : undefined
     const pipsTP3Num = form.pipsTP3 ? parseFloat(form.pipsTP3) : undefined
+    const pipsSLNum = form.pipsSL ? parseFloat(form.pipsSL) : undefined
 
     if (editingId) {
       // Mode édition : mettre à jour l'entrée existante
@@ -475,6 +481,7 @@ function DayDrawer({
         pipsTP1: pipsTP1Num,
         pipsTP2: pipsTP2Num,
         pipsTP3: pipsTP3Num,
+        pipsSL: pipsSLNum,
         notes: form.notes.trim() || undefined,
         screenshots: form.screenshots.length ? form.screenshots : undefined,
         screenshotDataUrl: form.screenshots[0]?.src || undefined,
@@ -495,6 +502,7 @@ function DayDrawer({
         pipsTP1: pipsTP1Num,
         pipsTP2: pipsTP2Num,
         pipsTP3: pipsTP3Num,
+        pipsSL: pipsSLNum,
         notes: form.notes.trim() || undefined,
         screenshots: form.screenshots.length ? form.screenshots : undefined,
         screenshotDataUrl: form.screenshots[0]?.src || undefined,
@@ -511,6 +519,7 @@ function DayDrawer({
       pipsTP1: "",
       pipsTP2: "",
       pipsTP3: "",
+      pipsSL: "",
       notes: "",
       screenshots: [],
     })
@@ -711,6 +720,17 @@ function DayDrawer({
                     />
                   </label>
                 </div>
+                <label className="mt-2 block text-sm font-medium text-slate-200">
+                  Pips SL (Stop Loss)
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={form.pipsSL}
+                    onChange={(e) => setForm((p) => ({ ...p, pipsSL: e.target.value }))}
+                    placeholder="ex: -25"
+                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100"
+                  />
+                </label>
               </div>
 
               <label className="mt-3 block text-sm font-medium text-slate-200">
@@ -885,12 +905,13 @@ function DayDrawer({
                         </div>
                       )}
                       {/* Détail des partiels */}
-                      {(e.pipsTP1 !== undefined || e.pipsTP2 !== undefined || e.pipsTP3 !== undefined) && (
+                      {(e.pipsTP1 !== undefined || e.pipsTP2 !== undefined || e.pipsTP3 !== undefined || e.pipsSL !== undefined) && (
                         <p className="mt-1 text-xs text-slate-400">
                           {[
                             e.pipsTP1 !== undefined && `TP1: ${e.pipsTP1}`,
                             e.pipsTP2 !== undefined && `TP2: ${e.pipsTP2}`,
                             e.pipsTP3 !== undefined && `TP3: ${e.pipsTP3}`,
+                            e.pipsSL !== undefined && `SL: ${e.pipsSL}`,
                           ].filter(Boolean).join(" • ")}
                         </p>
                       )}
