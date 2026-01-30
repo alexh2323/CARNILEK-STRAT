@@ -143,7 +143,7 @@ export default function MarkupsMonthPage() {
   const [editingCapital, setEditingCapital] = useState(false)
 
   // Évolution du capital jour par jour (cumulatif)
-  const capitalEvolution = useMemo(() => {
+  const filteredCapitalEvolution = useMemo(() => {
     // Trier les entrées par date
     const sorted = [...monthEntries].sort((a, b) => a.datetimeLocal.localeCompare(b.datetimeLocal))
     
@@ -194,6 +194,81 @@ export default function MarkupsMonthPage() {
     return arr
   }, [weeks.length, year, month])
 
+  // Sélection de semaine (null = tout le mois)
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null)
+
+  // Entrées filtrées par semaine si sélectionnée
+  const filteredEntries = useMemo(() => {
+    if (selectedWeek === null) return monthEntries
+    const weekDays = weeks[selectedWeek]
+    if (!weekDays) return monthEntries
+    const weekKeys = new Set(weekDays.map((d) => ymd(d)))
+    return monthEntries.filter((e) => {
+      const day = e.datetimeLocal.split("T")[0]
+      return weekKeys.has(day)
+    })
+  }, [monthEntries, selectedWeek, weeks])
+
+  // Stats filtrées par semaine
+  const filteredStats = useMemo(() => {
+    const stats = { TP1: 0, TP2: 0, TP3: 0, BE: 0, SL: 0 }
+    const beByPartial = { TP1: 0, TP2: 0 }
+    const slByPartial = { TP1: 0, TP2: 0 }
+    
+    for (const e of filteredEntries) {
+      if (e.tradeResult && e.tradeResult in stats) {
+        stats[e.tradeResult as keyof typeof stats]++
+      }
+      if (e.resultTP1 === "BE") beByPartial.TP1++
+      if (e.resultTP2 === "BE") beByPartial.TP2++
+      if (e.resultTP1 === "SL") slByPartial.TP1++
+      if (e.resultTP2 === "SL") slByPartial.TP2++
+    }
+    const total = stats.TP1 + stats.TP2 + stats.TP3 + stats.BE + stats.SL
+    const wins = stats.TP1 + stats.TP2 + stats.TP3
+    const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
+    const totalBEPartials = beByPartial.TP1 + beByPartial.TP2
+    const totalSLPartials = slByPartial.TP1 + slByPartial.TP2
+    return { ...stats, total, wins, winRate, beByPartial, totalBEPartials, slByPartial, totalSLPartials }
+  }, [filteredEntries])
+
+  // Évolution du capital filtrée
+  const filteredCapitalEvolution = useMemo(() => {
+    const sorted = [...filteredEntries].sort((a, b) => a.datetimeLocal.localeCompare(b.datetimeLocal))
+    
+    const data: Array<{ day: string; capital: number; pct: number; trades: number }> = []
+    let currentCapital = startingCapital
+    let cumulPct = 0
+    let tradeCount = 0
+    
+    const byDay = new Map<string, typeof sorted>()
+    for (const e of sorted) {
+      const day = e.datetimeLocal.split("T")[0]
+      const list = byDay.get(day) || []
+      list.push(e)
+      byDay.set(day, list)
+    }
+    
+    for (const [day, entries] of byDay) {
+      for (const e of entries) {
+        if (e.capitalPct !== undefined) {
+          cumulPct += e.capitalPct
+          currentCapital = startingCapital * (1 + cumulPct / 100)
+          tradeCount++
+        }
+      }
+      const dayNum = parseInt(day.split("-")[2])
+      data.push({
+        day: `${dayNum}`,
+        capital: Math.round(currentCapital),
+        pct: Math.round(cumulPct * 10) / 10,
+        trades: tradeCount,
+      })
+    }
+    
+    return data
+  }, [filteredEntries, startingCapital])
+
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const selectedList = selectedDay ? entriesByDay.get(selectedDay) ?? [] : []
 
@@ -226,7 +301,7 @@ export default function MarkupsMonthPage() {
           </div>
         </div>
 
-        <div className="mb-8 flex items-start justify-between gap-6">
+        <div className="mb-6 flex items-start justify-between gap-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-100 sm:text-4xl">
               {MONTHS_FR[month - 1]} {year}
@@ -234,9 +309,36 @@ export default function MarkupsMonthPage() {
           </div>
           <div className="hidden sm:flex items-center gap-2 text-xs text-slate-300">
             <span className="inline-flex items-center gap-1 rounded-full bg-slate-900/60 px-3 py-1.5 ring-1 ring-slate-800">
-              {hydrated ? `${monthEntries.length} entrées ce mois` : "Chargement…"}
+              {hydrated ? `${filteredEntries.length} entrées${selectedWeek !== null ? ` (W${selectedWeek + 1})` : ""}` : "Chargement…"}
             </span>
           </div>
+        </div>
+
+        {/* Sélecteur de semaine */}
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setSelectedWeek(null)}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              selectedWeek === null
+                ? "bg-slate-100 text-slate-900"
+                : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+            }`}
+          >
+            Tout le mois
+          </button>
+          {weeks.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSelectedWeek(idx)}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                selectedWeek === idx
+                  ? "bg-slate-100 text-slate-900"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+              }`}
+            >
+              W{idx + 1}
+            </button>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
@@ -346,38 +448,40 @@ export default function MarkupsMonthPage() {
         {/* Stats des résultats du mois */}
         <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 shadow-sm">
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-slate-100">Résultats du mois</h2>
+            <h2 className="text-lg font-semibold text-slate-100">
+              Résultats {selectedWeek !== null ? `(Semaine ${selectedWeek + 1})` : "du mois"}
+            </h2>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-3">
               <span className="rounded-lg bg-green-900/40 px-3 py-1.5 text-sm font-semibold text-green-300">
-                TP1: {resultStats.TP1} <span className="text-green-400/70">({resultStats.total > 0 ? Math.round((resultStats.TP1 / resultStats.total) * 100) : 0}%)</span>
+                TP1: {filteredStats.TP1} <span className="text-green-400/70">({filteredStats.total > 0 ? Math.round((filteredStats.TP1 / filteredStats.total) * 100) : 0}%)</span>
               </span>
               <span className="rounded-lg bg-green-900/60 px-3 py-1.5 text-sm font-semibold text-green-200">
-                TP2: {resultStats.TP2} <span className="text-green-300/70">({resultStats.total > 0 ? Math.round((resultStats.TP2 / resultStats.total) * 100) : 0}%)</span>
+                TP2: {filteredStats.TP2} <span className="text-green-300/70">({filteredStats.total > 0 ? Math.round((filteredStats.TP2 / filteredStats.total) * 100) : 0}%)</span>
               </span>
               <span className="rounded-lg bg-emerald-900/60 px-3 py-1.5 text-sm font-semibold text-emerald-200">
-                TP3: {resultStats.TP3} <span className="text-emerald-300/70">({resultStats.total > 0 ? Math.round((resultStats.TP3 / resultStats.total) * 100) : 0}%)</span>
+                TP3: {filteredStats.TP3} <span className="text-emerald-300/70">({filteredStats.total > 0 ? Math.round((filteredStats.TP3 / filteredStats.total) * 100) : 0}%)</span>
               </span>
               <span className="rounded-lg bg-yellow-900/40 px-3 py-1.5 text-sm font-semibold text-yellow-300">
-                BE: {resultStats.BE} <span className="text-yellow-400/70">({resultStats.total > 0 ? Math.round((resultStats.BE / resultStats.total) * 100) : 0}%)</span>
-                <span className="ml-2 text-[10px] text-yellow-400/60">[TP1: {resultStats.beByPartial.TP1} • TP2: {resultStats.beByPartial.TP2}]</span>
+                BE: {filteredStats.BE} <span className="text-yellow-400/70">({filteredStats.total > 0 ? Math.round((filteredStats.BE / filteredStats.total) * 100) : 0}%)</span>
+                <span className="ml-2 text-[10px] text-yellow-400/60">[TP1: {filteredStats.beByPartial.TP1} • TP2: {filteredStats.beByPartial.TP2}]</span>
               </span>
               <span className="rounded-lg bg-red-900/40 px-3 py-1.5 text-sm font-semibold text-red-300">
-                SL: {resultStats.SL} <span className="text-red-400/70">({resultStats.total > 0 ? Math.round((resultStats.SL / resultStats.total) * 100) : 0}%)</span>
-                <span className="ml-2 text-[10px] text-red-400/60">[Full: {resultStats.SL} • TP1: {resultStats.slByPartial.TP1} • TP2: {resultStats.slByPartial.TP2}]</span>
+                SL: {filteredStats.SL} <span className="text-red-400/70">({filteredStats.total > 0 ? Math.round((filteredStats.SL / filteredStats.total) * 100) : 0}%)</span>
+                <span className="ml-2 text-[10px] text-red-400/60">[Full: {filteredStats.SL} • TP1: {filteredStats.slByPartial.TP1} • TP2: {filteredStats.slByPartial.TP2}]</span>
               </span>
             </div>
             <div className="ml-auto flex items-center gap-3 text-sm">
               <span className="text-slate-400">
-                {resultStats.wins}/{resultStats.total} trades gagnants
+                {filteredStats.wins}/{filteredStats.total} trades gagnants
               </span>
               <span className={`rounded-lg px-3 py-1.5 font-bold ${
-                resultStats.winRate >= 50 
+                filteredStats.winRate >= 50 
                   ? "bg-green-900/40 text-green-300" 
                   : "bg-red-900/40 text-red-300"
               }`}>
-                Win rate: {resultStats.winRate}%
+                Win rate: {filteredStats.winRate}%
               </span>
             </div>
           </div>
@@ -402,17 +506,17 @@ export default function MarkupsMonthPage() {
                   onClick={() => setEditingCapital(true)}
                   className="text-2xl font-bold text-slate-100 hover:text-slate-200 transition"
                 >
-                  {(capitalEvolution.length > 0 ? capitalEvolution[capitalEvolution.length - 1].capital : startingCapital).toLocaleString()}€
+                  {(filteredCapitalEvolution.length > 0 ? filteredCapitalEvolution[filteredCapitalEvolution.length - 1].capital : startingCapital).toLocaleString()}€
                 </button>
               )}
-              {capitalEvolution.length > 0 && (
+              {filteredCapitalEvolution.length > 0 && (
                 <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold ${
-                  capitalEvolution[capitalEvolution.length - 1]?.pct >= 0 
+                  filteredCapitalEvolution[filteredCapitalEvolution.length - 1]?.pct >= 0 
                     ? "bg-green-500/20 text-green-400" 
                     : "bg-red-500/20 text-red-400"
                 }`}>
-                  {capitalEvolution[capitalEvolution.length - 1]?.pct > 0 ? "+" : ""}
-                  {capitalEvolution[capitalEvolution.length - 1]?.pct || 0}%
+                  {filteredCapitalEvolution[filteredCapitalEvolution.length - 1]?.pct > 0 ? "+" : ""}
+                  {filteredCapitalEvolution[filteredCapitalEvolution.length - 1]?.pct || 0}%
                 </span>
               )}
             </div>
@@ -421,7 +525,7 @@ export default function MarkupsMonthPage() {
             </div>
           </div>
 
-          {capitalEvolution.length > 0 ? (
+          {filteredCapitalEvolution.length > 0 ? (
             <ChartContainer
               config={{
                 capital: {
@@ -431,7 +535,7 @@ export default function MarkupsMonthPage() {
               }}
               className="h-[250px] w-full"
             >
-              <AreaChart data={capitalEvolution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart data={filteredCapitalEvolution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="capitalGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.3} />
