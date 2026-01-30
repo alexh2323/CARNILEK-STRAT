@@ -142,17 +142,43 @@ export default function MarkupsMonthPage() {
   const [startingCapital, setStartingCapital] = useState<number>(200000)
   const [editingCapital, setEditingCapital] = useState(false)
 
-  const weekGainsPct = useMemo(() => {
-    // fictif: gains % par semaine (W1..Wn) basé sur le nombre de semaines affichées
-    const arr: Array<{ label: string; pct: number }> = []
-    const n = weeks.length
-    for (let i = 0; i < n; i++) {
-      const t = Math.abs(Math.sin((year - 2015 + 1) * 0.21 + (month + 1) * 0.7 + i * 0.9) + Math.cos(i * 0.6))
-      const pct = Math.round((20 + t * 120) / 10) * 10
-      arr.push({ label: `W${i + 1}`, pct })
-    }
-    return arr
-  }, [weeks.length, year, month])
+  // Stats réelles par semaine basées sur les trades
+  const weeklyStats = useMemo(() => {
+    return weeks.map((weekDays, idx) => {
+      const weekKeys = new Set(weekDays.map((d) => ymd(d)))
+      const weekEntries = monthEntries.filter((e) => {
+        const day = e.datetimeLocal.split("T")[0]
+        return weekKeys.has(day)
+      })
+      
+      // Calculer le % capital de la semaine
+      let pct = 0
+      let trades = 0
+      let wins = 0
+      let losses = 0
+      
+      for (const e of weekEntries) {
+        if (e.capitalPct !== undefined) {
+          pct += e.capitalPct
+          trades++
+          if (e.tradeResult === "TP1" || e.tradeResult === "TP2" || e.tradeResult === "TP3") {
+            wins++
+          } else if (e.tradeResult === "SL") {
+            losses++
+          }
+        }
+      }
+      
+      return {
+        label: `W${idx + 1}`,
+        pct: Math.round(pct * 10) / 10,
+        trades,
+        wins,
+        losses,
+        winRate: trades > 0 ? Math.round((wins / trades) * 100) : 0
+      }
+    })
+  }, [weeks, monthEntries])
 
   // Sélection de semaine (null = tout le mois)
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null)
@@ -274,11 +300,11 @@ export default function MarkupsMonthPage() {
           </div>
         </div>
 
-        {/* Sélecteur de semaine */}
-        <div className="mb-6 flex flex-wrap items-center gap-2">
+        {/* Sélecteur de semaine avec stats */}
+        <div className="mb-6 flex flex-wrap items-center gap-3">
           <button
             onClick={() => setSelectedWeek(null)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+            className={`rounded-lg px-4 py-2.5 text-sm font-medium transition ${
               selectedWeek === null
                 ? "bg-slate-100 text-slate-900"
                 : "bg-slate-800 text-slate-300 hover:bg-slate-700"
@@ -286,17 +312,30 @@ export default function MarkupsMonthPage() {
           >
             Tout le mois
           </button>
-          {weeks.map((_, idx) => (
+          {weeklyStats.map((week, idx) => (
             <button
               key={idx}
               onClick={() => setSelectedWeek(idx)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              className={`flex flex-col items-center rounded-lg px-4 py-2 text-sm font-medium transition min-w-[70px] ${
                 selectedWeek === idx
                   ? "bg-slate-100 text-slate-900"
                   : "bg-slate-800 text-slate-300 hover:bg-slate-700"
               }`}
             >
-              W{idx + 1}
+              <span className="font-semibold">{week.label}</span>
+              {week.trades > 0 ? (
+                <span className={`text-xs mt-0.5 ${
+                  week.pct > 0 
+                    ? selectedWeek === idx ? "text-green-700" : "text-green-400" 
+                    : week.pct < 0 
+                      ? selectedWeek === idx ? "text-red-700" : "text-red-400"
+                      : selectedWeek === idx ? "text-slate-600" : "text-slate-500"
+                }`}>
+                  {week.pct > 0 ? "+" : ""}{week.pct}%
+                </span>
+              ) : (
+                <span className={`text-xs mt-0.5 ${selectedWeek === idx ? "text-slate-500" : "text-slate-600"}`}>—</span>
+              )}
             </button>
           ))}
         </div>
