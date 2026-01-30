@@ -1158,26 +1158,47 @@ function DayDrawer({
                   </select>
                 </label>
 
-                <div className="text-sm font-medium text-slate-200">
+                <div className="text-sm font-medium text-slate-200 sm:col-span-2">
                   Caractéristique
-                  <div className="mt-2 space-y-2">
-                    {ALLOWED_CHARACTERISTICS.map((char) => (
-                      <label key={char} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={form.characteristics.includes(char)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setForm((p) => ({ ...p, characteristics: [...p.characteristics, char] }))
-                            } else {
-                              setForm((p) => ({ ...p, characteristics: p.characteristics.filter((c) => c !== char) }))
-                            }
-                          }}
-                          className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-blue-500 focus:ring-blue-500"
-                        />
-                        <span className="text-slate-300 font-normal">{CHARACTERISTIC_LABELS[char]}</span>
-                      </label>
-                    ))}
+                  <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-2">
+                    <div className="space-y-2">
+                      {(["sorti_lit_cycle", "sorti_buildup", "prise_buildup"] as const).map((char) => (
+                        <label key={char} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.characteristics.includes(char)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setForm((p) => ({ ...p, characteristics: [...p.characteristics, char] }))
+                              } else {
+                                setForm((p) => ({ ...p, characteristics: p.characteristics.filter((c) => c !== char) }))
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-blue-500 focus:ring-blue-500"
+                          />
+                          <span className="text-slate-300 font-normal">{CHARACTERISTIC_LABELS[char]}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="space-y-2">
+                      {(["msu_baissier", "msu_haussier"] as const).map((char) => (
+                        <label key={char} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.characteristics.includes(char)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setForm((p) => ({ ...p, characteristics: [...p.characteristics, char] }))
+                              } else {
+                                setForm((p) => ({ ...p, characteristics: p.characteristics.filter((c) => c !== char) }))
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-blue-500 focus:ring-blue-500"
+                          />
+                          <span className="text-slate-300 font-normal">{CHARACTERISTIC_LABELS[char]}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
