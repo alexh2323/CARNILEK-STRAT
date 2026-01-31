@@ -85,7 +85,7 @@ export default function MarkupsMonthPage() {
   const year = Number(params.year)
   const month = Number(params.month) // "03" -> 3
 
-  const { hydrated, entries, setEntries } = useMarkups()
+  const { hydrated, entries, addEntry, updateEntry, deleteEntry } = useMarkups()
 
   const monthEntries = useMemo(() => {
     return entries.filter((e) => getEntryYear(e) === year && getEntryMonth(e) === month)
@@ -261,14 +261,6 @@ export default function MarkupsMonthPage() {
 
   const openDay = (dayKey: string) => setSelectedDay(dayKey)
   const closeDay = () => setSelectedDay(null)
-
-  const addEntry = (entry: MarkupEntry) => {
-    setEntries((prev) => [entry, ...prev])
-  }
-
-  const updateEntry = (id: string, updater: (e: MarkupEntry) => MarkupEntry) => {
-    setEntries((prev) => prev.map((e) => (e.id === id ? updater(e) : e)))
-  }
 
   return (
     <div className="min-h-screen text-slate-100">
