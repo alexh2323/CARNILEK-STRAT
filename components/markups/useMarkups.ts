@@ -7,37 +7,25 @@ import {
   addMarkupToStorage,
   updateMarkupInStorage,
   deleteMarkupFromStorage,
-  migrateLocalStorageToSupabase,
 } from "@/lib/markups/storage"
-import { SAMPLE_MARKUPS } from "@/lib/markups/sampleData"
 
 export function useMarkups() {
   const [entries, setEntries] = useState<MarkupEntry[]>([])
   const [hydrated, setHydrated] = useState(false)
 
-  // Charger les données au démarrage
+  // Charger les données depuis Supabase au démarrage
   useEffect(() => {
     async function init() {
       try {
-        // Migration automatique depuis localStorage (une seule fois)
-        await migrateLocalStorageToSupabase()
-        
-        // Charger depuis Supabase
+        console.log('Loading markups from Supabase...')
         const stored = await loadMarkupsFromStorage()
-        if (stored.length > 0) {
-          const normalized = stored.map(normalizeEntry)
-          setEntries(normalized)
-        } else {
-          // Si aucune donnée, utiliser les exemples et les sauvegarder
-          setEntries(SAMPLE_MARKUPS)
-          // Sauvegarder les exemples dans Supabase
-          for (const entry of SAMPLE_MARKUPS) {
-            await addMarkupToStorage(entry)
-          }
-        }
+        const normalized = stored.map(normalizeEntry)
+        setEntries(normalized)
+        console.log(`Loaded ${normalized.length} entries`)
       } catch (err) {
         console.error('Error loading markups:', err)
-        setEntries(SAMPLE_MARKUPS)
+        // Ne pas charger de données par défaut - juste laisser vide
+        setEntries([])
       }
       setHydrated(true)
     }
@@ -46,13 +34,21 @@ export function useMarkups() {
 
   // Ajouter une entrée
   const addEntry = useCallback(async (entry: MarkupEntry) => {
-    setEntries((prev) => [entry, ...prev])
-    await addMarkupToStorage(entry)
+    // D'abord sauvegarder sur Supabase
+    const success = await addMarkupToStorage(entry)
+    if (success) {
+      // Puis mettre à jour l'état local
+      setEntries((prev) => [entry, ...prev])
+    } else {
+      console.error('Failed to add entry to Supabase')
+    }
   }, [])
 
   // Mettre à jour une entrée
   const updateEntry = useCallback(async (id: string, updater: (e: MarkupEntry) => MarkupEntry) => {
     let updatedEntry: MarkupEntry | null = null
+    
+    // Trouver et mettre à jour l'entrée
     setEntries((prev) => {
       return prev.map((e) => {
         if (e.id === id) {
@@ -62,31 +58,25 @@ export function useMarkups() {
         return e
       })
     })
+    
+    // Sauvegarder sur Supabase
     if (updatedEntry) {
-      await updateMarkupInStorage(updatedEntry)
+      const success = await updateMarkupInStorage(updatedEntry)
+      if (!success) {
+        console.error('Failed to update entry in Supabase')
+      }
     }
   }, [])
 
   // Supprimer une entrée
   const deleteEntry = useCallback(async (id: string) => {
-    setEntries((prev) => prev.filter((e) => e.id !== id))
-    await deleteMarkupFromStorage(id)
-  }, [])
-
-  // Setter compatible avec l'ancienne API (pour les composants existants)
-  const setEntriesCompat = useCallback((updater: MarkupEntry[] | ((prev: MarkupEntry[]) => MarkupEntry[])) => {
-    if (typeof updater === 'function') {
-      setEntries((prev) => {
-        const next = updater(prev)
-        // Détecter les changements et synchroniser avec Supabase
-        syncChanges(prev, next)
-        return next
-      })
+    // D'abord supprimer de Supabase
+    const success = await deleteMarkupFromStorage(id)
+    if (success) {
+      // Puis mettre à jour l'état local
+      setEntries((prev) => prev.filter((e) => e.id !== id))
     } else {
-      setEntries((prev) => {
-        syncChanges(prev, updater)
-        return updater
-      })
+      console.error('Failed to delete entry from Supabase')
     }
   }, [])
 
@@ -97,40 +87,10 @@ export function useMarkups() {
   return {
     hydrated,
     entries: sortedEntries,
-    setEntries: setEntriesCompat,
+    setEntries,
     addEntry,
     updateEntry,
     deleteEntry,
-  }
-}
-
-// Synchroniser les changements avec Supabase
-async function syncChanges(prev: MarkupEntry[], next: MarkupEntry[]) {
-  const prevIds = new Set(prev.map((e) => e.id))
-  const nextIds = new Set(next.map((e) => e.id))
-
-  // Nouvelles entrées
-  for (const entry of next) {
-    if (!prevIds.has(entry.id)) {
-      await addMarkupToStorage(entry)
-    }
-  }
-
-  // Entrées supprimées
-  for (const entry of prev) {
-    if (!nextIds.has(entry.id)) {
-      await deleteMarkupFromStorage(entry.id)
-    }
-  }
-
-  // Entrées modifiées
-  for (const nextEntry of next) {
-    if (prevIds.has(nextEntry.id)) {
-      const prevEntry = prev.find((e) => e.id === nextEntry.id)
-      if (prevEntry && JSON.stringify(prevEntry) !== JSON.stringify(nextEntry)) {
-        await updateMarkupInStorage(nextEntry)
-      }
-    }
   }
 }
 
